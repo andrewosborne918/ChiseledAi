@@ -975,6 +975,7 @@ class WorkoutPlanPage(tk.Frame):
     def __init__(self, parent, app, responses):
         super().__init__(parent, bg='#212529')
         self.app = app
+        self.responses = responses  # Store the responses
 
         # Create main container
         self.main_container = tk.Frame(self, padx=40, pady=40, bg='#212529')
@@ -1275,7 +1276,7 @@ class WorkoutPlanPage(tk.Frame):
             widget.destroy()
 
         # Generate and display a new plan
-        self.display_workout_plan(responses, is_saved_plan=False)
+        self.display_workout_plan(self.responses, is_saved_plan=False)  # Use self.responses instead of responses parameter
 
     def open_url(self, url):
         """Open the URL in the default web browser"""
