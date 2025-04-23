@@ -1070,79 +1070,41 @@ class WorkoutPlanPage(tk.Frame):
             plan = self.generate_workout_plan(responses)
             responses['plan_text'] = plan
 
-        # Process and insert the plan with formatting
+        # Process the plan to add video links
         lines = plan.split('\n')
+        processed_lines = []
+        in_exercise_block = False
+        current_exercise = None
+
         for line in lines:
             line = line.strip()
-            if not line:
-                self.plan_text.insert("end", "\n")
+            
+            # Check if we're entering an exercise block (line with no special characters)
+            if (line and 
+                not line.startswith(('#', '-', '[', '•')) and 
+                ':' not in line and 
+                '.' not in line and
+                len(line.split()) <= 4):  # Exercise names are typically 1-4 words
+                in_exercise_block = True
+                current_exercise = line
+                # Get video for the exercise
+                video_url, source = get_youtube_video(line)
+                if video_url:
+                    processed_lines.append(f"[{line}]({video_url})")
+                    logging.info(f"Added video link for {line}: {video_url}")
+                else:
+                    processed_lines.append(line)
+                    logging.warning(f"No video found for {line}")
                 continue
 
-            if line.startswith('#'):
-                # Header
-                header_text = line.lstrip('#').strip()
-                self.plan_text.insert("end", header_text + "\n", "header")
-            elif line.startswith('##'):
-                # Subheader
-                subheader_text = line.lstrip('#').strip()
-                self.plan_text.insert("end", subheader_text + "\n", "subheader")
-            elif line.startswith('[') and '](' in line and ')' in line:
-                # Exercise link
-                exercise_name = line[line.find('[') + 1:line.find(']')]
-                url = line[line.find('(') + 1:line.find(')')]
+            # If line starts with - or contains :, we're in the exercise details
+            if line.startswith('-') or ':' in line:
+                in_exercise_block = False
+            
+            # Add line as is
+            processed_lines.append(line)
 
-                # Insert the exercise name as a clickable link
-                start_index = self.plan_text.index("end-1c")
-                self.plan_text.insert("end", exercise_name, "exercise_link")
-                end_index = self.plan_text.index("end-1c")
-
-                # Add a newline after the link
-                self.plan_text.insert("end", "\n")
-
-                # Create a click handler for this specific link
-                def make_click_handler(url):
-                    return lambda event: self.open_url(url)
-
-                # Bind the click event to the specific text range
-                self.plan_text.tag_bind("exercise_link", "<Button-1>", make_click_handler(url))
-                self.plan_text.tag_bind("exercise_link", "<Enter>", lambda e: self.plan_text.config(cursor="hand2"))
-                self.plan_text.tag_bind("exercise_link", "<Leave>", lambda e: self.plan_text.config(cursor=""))
-            elif line.startswith('-'):
-                # Bullet point
-                bullet_text = line.lstrip('-').strip()
-                # Check for bold text within bullet points
-                if '**' in bullet_text:
-                    parts = bullet_text.split('**')
-                    self.plan_text.insert("end", "• ", "bullet")
-                    for i, part in enumerate(parts):
-                        if i % 2 == 0:
-                            self.plan_text.insert("end", part, "normal")
-                        else:
-                            self.plan_text.insert("end", part, "h3")
-                    self.plan_text.insert("end", "\n")
-                else:
-                    self.plan_text.insert("end", "• " + bullet_text + "\n", "bullet")
-            else:
-                # Normal text
-                if '**' in line:
-                    parts = line.split('**')
-                    for i, part in enumerate(parts):
-                        if i % 2 == 0:
-                            self.plan_text.insert("end", part, "normal")
-                        else:
-                            self.plan_text.insert("end", part, "h3")
-                    self.plan_text.insert("end", "\n")
-                else:
-                    self.plan_text.insert("end", line + "\n", "normal")
-
-        # Make it read-only
-        self.plan_text.config(state="disabled")
-
-        # Add some spacing at the end
-        self.plan_text.insert("end", "\n\n")
-
-        # Force update of all widgets
-        self.update_idletasks()
+        return '\n'.join(processed_lines)
 
     def create_buttons(self):
         """Create the refresh and new plan buttons."""
@@ -1324,14 +1286,20 @@ Format the plan in a clear, easy-to-follow structure. Use the following format:
             # Process the plan to add video links
             lines = plan_text.split('\n')
             processed_lines = []
+            in_exercise_block = False
+            current_exercise = None
 
             for line in lines:
                 line = line.strip()
-                # Check if the line contains an exercise name (not a header, bullet point, or already linked)
-                if (line and
-                        not line.startswith(('#', '-', '[')) and
-                        ']' not in line and
-                        ':' not in line):  # Skip lines with colons (typically metadata lines)
+                
+                # Check if we're entering an exercise block (line with no special characters)
+                if (line and 
+                    not line.startswith(('#', '-', '[', '•')) and 
+                    ':' not in line and 
+                    '.' not in line and
+                    len(line.split()) <= 4):  # Exercise names are typically 1-4 words
+                    in_exercise_block = True
+                    current_exercise = line
                     # Get video for the exercise
                     video_url, source = get_youtube_video(line)
                     if video_url:
@@ -1340,8 +1308,14 @@ Format the plan in a clear, easy-to-follow structure. Use the following format:
                     else:
                         processed_lines.append(line)
                         logging.warning(f"No video found for {line}")
-                else:
-                    processed_lines.append(line)
+                    continue
+
+                # If line starts with - or contains :, we're in the exercise details
+                if line.startswith('-') or ':' in line:
+                    in_exercise_block = False
+                
+                # Add line as is
+                processed_lines.append(line)
 
             return '\n'.join(processed_lines)
 
