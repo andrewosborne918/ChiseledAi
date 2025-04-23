@@ -958,19 +958,33 @@ class WorkoutPlanPage(tk.Frame):
                 bg='#212529',
                 fg='white'
             )
-            self.loading_label.pack(pady=20)
+            self.loading_label.pack(pady=(20, 10))
 
-            self.loading_dots = tk.Label(
-                self.loading_frame,
-                text="",
-                font=("Helvetica", 24),
-                bg='#212529',
-                fg='#eb5e28'
-            )
-            self.loading_dots.pack()
+            # Create a frame for progress steps
+            self.progress_frame = tk.Frame(self.loading_frame, bg='#212529')
+            self.progress_frame.pack(fill="x", padx=20)
 
-            self.dots_count = 0
-            self.animate_loading()
+            # Initialize progress steps (hidden initially)
+            self.progress_steps = []
+            steps = [
+                "Analyzing your preferences...",
+                "Designing workout structure...",
+                "Selecting exercises...",
+                "Generating exercise instructions...",
+                "Creating your personalized plan..."
+            ]
+            
+            for step in steps:
+                step_label = tk.Label(
+                    self.progress_frame,
+                    text="○ " + step,
+                    font=("Helvetica", 12),
+                    bg='#212529',
+                    fg='white',
+                    anchor="w"
+                )
+                step_label.pack(fill="x", pady=2)
+                self.progress_steps.append(step_label)
 
             # Start plan generation in a separate thread
             self.after(100, lambda: self.generate_and_display_plan(responses))
@@ -978,40 +992,102 @@ class WorkoutPlanPage(tk.Frame):
             # Display saved plan immediately
             self.display_workout_plan(responses, is_saved_plan=True)
 
-    def start_new_plan(self):
-        """Start a new workout plan by showing the main form"""
-        # Destroy the current workout plan page
-        self.destroy()
-
-        # Show the main form
-        self.app.show_main_form()
-
-    def animate_loading(self):
-        """Animate the loading dots"""
-        if hasattr(self, 'loading_dots') and self.loading_dots.winfo_exists():
-            dots = "." * (self.dots_count % 4)
-            self.loading_dots.config(text=dots)
-            self.dots_count += 1
-            self.after(500, self.animate_loading)
+    def update_progress(self, step_index):
+        """Update the progress indicators"""
+        for i, step_label in enumerate(self.progress_steps):
+            if i < step_index:
+                # Completed steps
+                step_label.config(text="✓ " + step_label.cget("text")[2:], fg='#eb5e28')
+            elif i == step_index:
+                # Current step
+                step_label.config(text="● " + step_label.cget("text")[2:], fg='#eb5e28')
+            else:
+                # Future steps
+                step_label.config(text="○ " + step_label.cget("text")[2:], fg='white')
+        self.update_idletasks()
 
     def generate_and_display_plan(self, responses):
-        """Generate the plan and update the display"""
-        # Remove loading frame if it exists
-        if hasattr(self, 'loading_frame'):
-            self.loading_frame.pack_forget()
+        """Generate the plan and update the display with progress indicators"""
+        try:
+            # Update progress for each step
+            self.update_progress(0)  # Analyzing preferences
+            self.after(1000, lambda: self.update_progress(1))  # Designing structure
+            self.after(2000, lambda: self.update_progress(2))  # Selecting exercises
+            self.after(3000, lambda: self.update_progress(3))  # Generating instructions
+            self.after(4000, lambda: self.update_progress(4))  # Creating plan
 
-        # Generate new plan
-        plan = self.generate_workout_plan(responses)
+            # Generate new plan
+            plan = self.generate_workout_plan(responses)
 
-        # Save the generated plan
-        responses['plan_text'] = plan
-        from datetime import datetime
-        current_time = datetime.now()
-        responses['timestamp'] = current_time.strftime("%B %d, %Y | %I:%M%p").replace("AM", "am").replace("PM", "pm")
-        self.app.save_workout_plan(responses)
+            # Save the generated plan
+            responses['plan_text'] = plan
+            from datetime import datetime
+            current_time = datetime.now()
+            responses['timestamp'] = current_time.strftime("%B %d, %Y | %I:%M%p").replace("AM", "am").replace("PM", "pm")
+            self.app.save_workout_plan(responses)
 
-        # Display the workout plan
-        self.display_workout_plan(responses, is_saved_plan=True)
+            # Display the workout plan after a short delay
+            self.after(5000, lambda: self.display_workout_plan(responses, is_saved_plan=True))
+
+        except Exception as e:
+            # Handle any errors during generation
+            error_label = tk.Label(
+                self.loading_frame,
+                text=f"Error generating plan: {str(e)}\nPlease try again.",
+                font=("Helvetica", 12),
+                bg='#212529',
+                fg='red',
+                wraplength=400
+            )
+            error_label.pack(pady=20)
+
+    def refresh_plan(self):
+        """Generate a new workout plan with the same preferences"""
+        # Clear the current plan display
+        for widget in self.plan_container.winfo_children():
+            widget.destroy()
+
+        # Create loading frame
+        self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
+        self.loading_frame.pack(fill="both", expand=True)
+
+        self.loading_label = tk.Label(
+            self.loading_frame,
+            text="Generating new workout plan...",
+            font=("Helvetica", 16),
+            bg='#212529',
+            fg='white'
+        )
+        self.loading_label.pack(pady=(20, 10))
+
+        # Create progress frame and steps
+        self.progress_frame = tk.Frame(self.loading_frame, bg='#212529')
+        self.progress_frame.pack(fill="x", padx=20)
+
+        # Initialize progress steps
+        self.progress_steps = []
+        steps = [
+            "Analyzing your preferences...",
+            "Designing workout structure...",
+            "Selecting exercises...",
+            "Generating exercise instructions...",
+            "Creating your personalized plan..."
+        ]
+        
+        for step in steps:
+            step_label = tk.Label(
+                self.progress_frame,
+                text="○ " + step,
+                font=("Helvetica", 12),
+                bg='#212529',
+                fg='white',
+                anchor="w"
+            )
+            step_label.pack(fill="x", pady=2)
+            self.progress_steps.append(step_label)
+
+        # Start new plan generation
+        self.after(100, lambda: self.generate_and_display_plan(self.responses))
 
     def display_workout_plan(self, responses, is_saved_plan=False):
         """Display the workout plan with proper formatting and styling."""
@@ -1248,19 +1324,13 @@ class WorkoutPlanPage(tk.Frame):
         self.new_plan_canvas.bind("<Leave>", on_new_plan_leave)
         self.new_plan_label.bind("<Leave>", on_new_plan_leave)
 
-    def refresh_plan(self):
-        """Generate a new workout plan with the same preferences"""
-        # Clear the current plan display
-        for widget in self.plan_container.winfo_children():
-            widget.destroy()
+    def start_new_plan(self):
+        """Start a new workout plan by showing the main form"""
+        # Destroy the current workout plan page
+        self.destroy()
 
-        # Show loading message
-        loading_label = tk.Label(self.plan_container, text="Loading your new plan...", 
-                                 font=("Helvetica", 16), bg='#212529', fg='white')
-        loading_label.pack(expand=True)
-
-        # Optionally, you can add a delay before generating the new plan
-        self.after(1000, lambda: self.display_workout_plan(self.responses, is_saved_plan=False))
+        # Show the main form
+        self.app.show_main_form()
 
     def open_url(self, url):
         """Open the URL in the default web browser"""
