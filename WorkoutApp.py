@@ -1026,7 +1026,7 @@ class WorkoutPlanPage(tk.Frame):
         
         # Create a frame to hold the text widget and scrollbar
         text_frame = tk.Frame(content_frame, bg='#212529')
-        text_frame.pack(fill="both", expand=True)
+        text_frame.pack(fill="both", expand=True, pady=(0, 20))  # Add bottom padding for buttons
         
         # Create a text widget for the workout plan
         self.plan_text = tk.Text(text_frame, wrap=tk.WORD, bg='#212529', fg='white',
@@ -1138,9 +1138,9 @@ class WorkoutPlanPage(tk.Frame):
         # Add some spacing at the end
         self.plan_text.insert("end", "\n\n")
         
-        # Create button container
-        self.button_container = tk.Frame(content_frame, bg='#212529', padx=20, pady=10)
-        self.button_container.pack(side="bottom", pady=20, fill="x")
+        # Create button container with fixed height
+        self.button_container = tk.Frame(content_frame, bg='#212529', padx=20, pady=10, height=60)
+        self.button_container.pack(side="bottom", fill="x", expand=False)
         
         # Create buttons
         width = self.app.winfo_width()
