@@ -951,20 +951,24 @@ class WorkoutPlanPage(tk.Frame):
             self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
             self.loading_frame.pack(fill="both", expand=True)
 
+            # Create a container to center the content vertically
+            center_container = tk.Frame(self.loading_frame, bg='#212529')
+            center_container.place(relx=0.5, rely=0.4, anchor="center")
+
             self.loading_label = tk.Label(
-                self.loading_frame,
+                center_container,
                 text="Generating your personalized workout plan...",
                 font=("Helvetica", 16),
                 bg='#212529',
                 fg='white'
             )
-            self.loading_label.pack(pady=(20, 10))
+            self.loading_label.pack(pady=(0, 20))
 
-            # Create a frame for progress steps
-            self.progress_frame = tk.Frame(self.loading_frame, bg='#212529')
-            self.progress_frame.pack(fill="x", padx=20)
+            # Create progress frame
+            self.progress_frame = tk.Frame(center_container, bg='#212529')
+            self.progress_frame.pack(fill="x")
 
-            # Initialize progress steps (hidden initially)
+            # Initialize progress steps
             self.progress_steps = []
             steps = [
                 "Analyzing your preferences...",
@@ -986,7 +990,7 @@ class WorkoutPlanPage(tk.Frame):
                 step_label.pack(fill="x", pady=2)
                 self.progress_steps.append(step_label)
 
-            # Start plan generation in a separate thread
+            # Start plan generation
             self.after(100, lambda: self.generate_and_display_plan(responses))
         else:
             # Display saved plan immediately
@@ -1009,17 +1013,112 @@ class WorkoutPlanPage(tk.Frame):
     def generate_and_display_plan(self, responses):
         """Generate the plan and update the display with progress indicators"""
         try:
-            # Update progress for each step
-            self.update_progress(0)  # Analyzing preferences
-            self.after(1000, lambda: self.update_progress(1))  # Designing structure
-            self.after(2000, lambda: self.update_progress(2))  # Selecting exercises
-            self.after(3000, lambda: self.update_progress(3))  # Generating instructions
-            self.after(4000, lambda: self.update_progress(4))  # Creating plan
+            # Start with analyzing preferences
+            self.update_progress(0)
+            
+            # Generate the prompt and start the plan generation
+            prompt = f"""Create a detailed, personalized workout plan based on the following user preferences:
 
-            # Generate new plan
-            plan = self.generate_workout_plan(responses)
+Workout Focus: {responses['Workout Focus']}
+{"Targeted Muscles: " + ", ".join(responses['Muscle Groups']) if responses['Muscle Groups'] else ""}
+Goal: {responses['Goal']}
+Experience Level: {responses['Experience']}
+Equipment: {", ".join(responses['Equipment'])}
+Duration: {responses['Duration']}
+Location: {responses['Location']}
+{"Injuries/Restrictions: " + responses['Injuries'] if responses['Injuries'] else ""}
+Workout Style: {responses['Workout Style']}
+
+Please provide a comprehensive workout plan that includes:
+1. A warm-up routine
+2. Main workout exercises with sets, reps, and rest periods
+3. A cool-down routine
+4. Any specific notes or modifications based on the user's preferences and restrictions
+
+Important Guidelines:
+1. Only suggest exercises that can be done with the available equipment
+2. Ensure exercises are appropriate for the user's experience level
+3. Account for any injuries or restrictions in the exercise selection
+4. Match the workout duration to the user's preference
+5. Consider the workout location in exercise selection
+
+Formatting Guidelines:
+1. Use markup to format the workouts
+2. Make the title of the workout an H1 (use #)
+3. Make the different workout block headers an H2 (use ##)
+4. For each exercise:
+   - Put the exercise name in square brackets [Exercise Name]
+   - Include sets, reps, rest time, and important notes after the exercise name
+   - Use bullet points (-) for sets, reps, and notes
+5. Use clear spacing between sections and exercises"""
+
+            # Update to designing structure
+            self.update_progress(1)
+            
+            # Generate initial response
+            response = model.generate_content(prompt)
+            if not response or not response.text:
+                raise ValueError("Empty response from Gemini API")
+
+            plan_text = response.text
+            
+            # Update to selecting exercises
+            self.update_progress(2)
+            
+            # Process the plan to identify exercises
+            lines = plan_text.split('\n')
+            processed_lines = []
+            exercise_instructions = {}
+            
+            # Update to generating instructions
+            self.update_progress(3)
+            
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    processed_lines.append(line)
+                    continue
+
+                # Check for exercise names in square brackets
+                if '[' in line and ']' in line:
+                    start = line.find('[')
+                    end = line.find(']')
+                    if start < end:
+                        exercise_name = line[start + 1:end]
+                        
+                        # Generate instructions for this exercise
+                        instruction_prompt = f"""Provide detailed instructions for the exercise: {exercise_name}
+
+Please include:
+1. Starting position
+2. Movement execution
+3. Breathing pattern
+4. Common mistakes to avoid
+5. Form cues
+6. Safety tips
+
+Keep the instructions clear and concise, focusing on proper form and safety."""
+
+                        try:
+                            instruction_response = model.generate_content(instruction_prompt)
+                            if instruction_response and instruction_response.text:
+                                exercise_instructions[exercise_name] = instruction_response.text.strip()
+                            else:
+                                exercise_instructions[exercise_name] = "Instructions not available."
+                        except Exception as e:
+                            exercise_instructions[exercise_name] = "Instructions not available."
+
+                # Add the line as is
+                processed_lines.append(line)
+
+            # Store the exercise instructions in the responses dictionary
+            responses['exercise_instructions'] = exercise_instructions
+            
+            # Update to creating plan
+            self.update_progress(4)
 
             # Save the generated plan
+            plan = '\n'.join(processed_lines)
             responses['plan_text'] = plan
             from datetime import datetime
             current_time = datetime.now()
@@ -1027,7 +1126,7 @@ class WorkoutPlanPage(tk.Frame):
             self.app.save_workout_plan(responses)
 
             # Display the workout plan after a short delay
-            self.after(5000, lambda: self.display_workout_plan(responses, is_saved_plan=True))
+            self.after(1000, lambda: self.display_workout_plan(responses, is_saved_plan=True))
 
         except Exception as e:
             # Handle any errors during generation
@@ -1040,54 +1139,6 @@ class WorkoutPlanPage(tk.Frame):
                 wraplength=400
             )
             error_label.pack(pady=20)
-
-    def refresh_plan(self):
-        """Generate a new workout plan with the same preferences"""
-        # Clear the current plan display
-        for widget in self.plan_container.winfo_children():
-            widget.destroy()
-
-        # Create loading frame
-        self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
-        self.loading_frame.pack(fill="both", expand=True)
-
-        self.loading_label = tk.Label(
-            self.loading_frame,
-            text="Generating new workout plan...",
-            font=("Helvetica", 16),
-            bg='#212529',
-            fg='white'
-        )
-        self.loading_label.pack(pady=(20, 10))
-
-        # Create progress frame and steps
-        self.progress_frame = tk.Frame(self.loading_frame, bg='#212529')
-        self.progress_frame.pack(fill="x", padx=20)
-
-        # Initialize progress steps
-        self.progress_steps = []
-        steps = [
-            "Analyzing your preferences...",
-            "Designing workout structure...",
-            "Selecting exercises...",
-            "Generating exercise instructions...",
-            "Creating your personalized plan..."
-        ]
-        
-        for step in steps:
-            step_label = tk.Label(
-                self.progress_frame,
-                text="○ " + step,
-                font=("Helvetica", 12),
-                bg='#212529',
-                fg='white',
-                anchor="w"
-            )
-            step_label.pack(fill="x", pady=2)
-            self.progress_steps.append(step_label)
-
-        # Start new plan generation
-        self.after(100, lambda: self.generate_and_display_plan(self.responses))
 
     def display_workout_plan(self, responses, is_saved_plan=False):
         """Display the workout plan with proper formatting and styling."""
@@ -1163,6 +1214,9 @@ class WorkoutPlanPage(tk.Frame):
                 self.plan_text.insert("end", "\n")
                 continue
 
+            # Remove any remaining asterisks from the line
+            line = line.replace('*', '')
+
             if line.startswith('#') and not line.startswith('##'):
                 # Header
                 header_text = line.lstrip('#').strip()
@@ -1222,30 +1276,10 @@ class WorkoutPlanPage(tk.Frame):
             elif line.startswith('-'):
                 # Bullet point
                 bullet_text = line.lstrip('-').strip()
-                # Check for bold text within bullet points
-                if '**' in bullet_text:
-                    parts = bullet_text.split('**')
-                    self.plan_text.insert("end", "• ", "bullet")
-                    for i, part in enumerate(parts):
-                        if i % 2 == 0:
-                            self.plan_text.insert("end", part, "normal")
-                        else:
-                            self.plan_text.insert("end", part, "h3")
-                    self.plan_text.insert("end", "\n")
-                else:
-                    self.plan_text.insert("end", "• " + bullet_text + "\n", "bullet")
+                self.plan_text.insert("end", "• " + bullet_text + "\n", "bullet")
             else:
                 # Normal text
-                if '**' in line:
-                    parts = line.split('**')
-                    for i, part in enumerate(parts):
-                        if i % 2 == 0:
-                            self.plan_text.insert("end", part, "normal")
-                        else:
-                            self.plan_text.insert("end", part, "h3")
-                    self.plan_text.insert("end", "\n")
-                else:
-                    self.plan_text.insert("end", line + "\n", "normal")
+                self.plan_text.insert("end", line + "\n", "normal")
 
         # Make it read-only
         self.plan_text.config(state="disabled")
