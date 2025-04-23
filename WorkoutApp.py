@@ -922,6 +922,8 @@ class WorkoutPlanPage(tk.Frame):
         super().__init__(parent, bg='#212529')
         self.app = app
         self.responses = responses  # Store the responses
+        self.progress_value = 0
+        self.is_generating = False
 
         # Create main container
         self.main_container = tk.Frame(self, padx=40, pady=40, bg='#212529')
@@ -947,75 +949,93 @@ class WorkoutPlanPage(tk.Frame):
         is_saved_plan = 'plan_text' in responses and 'timestamp' in responses
 
         if not is_saved_plan:
-            # Show loading frame only for new plans
-            self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
-            self.loading_frame.pack(fill="both", expand=True)
-
-            # Create a container to center the content vertically
-            center_container = tk.Frame(self.loading_frame, bg='#212529')
-            center_container.place(relx=0.5, rely=0.4, anchor="center")
-
-            self.loading_label = tk.Label(
-                center_container,
-                text="Generating your personalized workout plan...",
-                font=("Helvetica", 16),
-                bg='#212529',
-                fg='white'
-            )
-            self.loading_label.pack(pady=(0, 20))
-
-            # Create progress frame
-            self.progress_frame = tk.Frame(center_container, bg='#212529')
-            self.progress_frame.pack(fill="x")
-
-            # Initialize progress steps
-            self.progress_steps = []
-            steps = [
-                "Analyzing your preferences...",
-                "Designing workout structure...",
-                "Selecting exercises...",
-                "Generating exercise instructions...",
-                "Creating your personalized plan..."
-            ]
-            
-            for step in steps:
-                step_label = tk.Label(
-                    self.progress_frame,
-                    text="○ " + step,
-                    font=("Helvetica", 12),
-                    bg='#212529',
-                    fg='white',
-                    anchor="w"
-                )
-                step_label.pack(fill="x", pady=2)
-                self.progress_steps.append(step_label)
-
+            self.show_loading_screen()
             # Start plan generation
             self.after(100, lambda: self.generate_and_display_plan(responses))
         else:
             # Display saved plan immediately
             self.display_workout_plan(responses, is_saved_plan=True)
 
-    def update_progress(self, step_index):
-        """Update the progress indicators"""
-        for i, step_label in enumerate(self.progress_steps):
-            if i < step_index:
-                # Completed steps
-                step_label.config(text="✓ " + step_label.cget("text")[2:], fg='#eb5e28')
-            elif i == step_index:
-                # Current step
-                step_label.config(text="● " + step_label.cget("text")[2:], fg='#eb5e28')
-            else:
-                # Future steps
-                step_label.config(text="○ " + step_label.cget("text")[2:], fg='white')
-        self.update_idletasks()
+    def show_loading_screen(self):
+        """Show the loading screen with progress bar"""
+        # Show loading frame only for new plans
+        self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
+        self.loading_frame.pack(fill="both", expand=True)
+
+        # Create a container to center the content vertically
+        center_container = tk.Frame(self.loading_frame, bg='#212529')
+        center_container.place(relx=0.5, rely=0.4, anchor="center")
+
+        self.loading_label = tk.Label(
+            center_container,
+            text="Generating your personalized workout plan...",
+            font=("Helvetica", 16),
+            bg='#212529',
+            fg='white'
+        )
+        self.loading_label.pack(pady=(0, 20))
+
+        # Create progress bar container
+        progress_container = tk.Frame(center_container, bg='#212529')
+        progress_container.pack(fill="x", padx=20)
+
+        # Create progress bar using Canvas
+        self.progress_canvas = tk.Canvas(
+            progress_container,
+            width=300,
+            height=20,
+            bg='#212529',
+            highlightthickness=0
+        )
+        self.progress_canvas.pack(pady=10)
+
+        # Draw progress bar background
+        self.progress_canvas.create_rounded_rect(
+            0, 0, 300, 20, 10,
+            fill='#2b3035',
+            outline='#eb5e28',
+            width=2
+        )
+
+        # Draw initial progress bar fill
+        self.progress_fill = self.progress_canvas.create_rounded_rect(
+            2, 2, 4, 18, 9,
+            fill='#eb5e28',
+            outline=''
+        )
+
+        # Reset and start progress animation
+        self.progress_value = 0
+        self.is_generating = True
+        self.animate_progress()
+
+    def animate_progress(self):
+        """Animate the progress bar"""
+        if not self.is_generating:
+            return
+
+        # Update progress bar
+        self.progress_value += 0.5
+        if self.progress_value > 100:
+            self.progress_value = 0
+
+        # Calculate width of progress fill
+        width = (self.progress_value / 100) * 296
+
+        # Update progress bar fill
+        self.progress_canvas.delete(self.progress_fill)
+        self.progress_fill = self.progress_canvas.create_rounded_rect(
+            2, 2, width + 2, 18, 9,
+            fill='#eb5e28',
+            outline=''
+        )
+
+        # Continue animation
+        self.after(50, self.animate_progress)
 
     def generate_and_display_plan(self, responses):
-        """Generate the plan and update the display with progress indicators"""
+        """Generate the plan and update the display with progress bar"""
         try:
-            # Start with analyzing preferences
-            self.update_progress(0)
-            
             # Generate the prompt and start the plan generation
             prompt = f"""Create a detailed, personalized workout plan based on the following user preferences:
 
@@ -1052,9 +1072,6 @@ Formatting Guidelines:
    - Use bullet points (-) for sets, reps, and notes
 5. Use clear spacing between sections and exercises"""
 
-            # Update to designing structure
-            self.update_progress(1)
-            
             # Generate initial response
             response = model.generate_content(prompt)
             if not response or not response.text:
@@ -1062,16 +1079,10 @@ Formatting Guidelines:
 
             plan_text = response.text
             
-            # Update to selecting exercises
-            self.update_progress(2)
-            
             # Process the plan to identify exercises
             lines = plan_text.split('\n')
             processed_lines = []
             exercise_instructions = {}
-            
-            # Update to generating instructions
-            self.update_progress(3)
             
             for line in lines:
                 line = line.strip()
@@ -1114,9 +1125,6 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
             # Store the exercise instructions in the responses dictionary
             responses['exercise_instructions'] = exercise_instructions
             
-            # Update to creating plan
-            self.update_progress(4)
-
             # Save the generated plan
             plan = '\n'.join(processed_lines)
             responses['plan_text'] = plan
@@ -1125,11 +1133,13 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
             responses['timestamp'] = current_time.strftime("%B %d, %Y | %I:%M%p").replace("AM", "am").replace("PM", "pm")
             self.app.save_workout_plan(responses)
 
-            # Display the workout plan after a short delay
-            self.after(1000, lambda: self.display_workout_plan(responses, is_saved_plan=True))
+            # Stop progress animation and display the plan
+            self.is_generating = False
+            self.after(500, lambda: self.display_workout_plan(responses, is_saved_plan=True))
 
         except Exception as e:
             # Handle any errors during generation
+            self.is_generating = False
             error_label = tk.Label(
                 self.loading_frame,
                 text=f"Error generating plan: {str(e)}\nPlease try again.",
@@ -1502,48 +1512,8 @@ Error details: {str(e)}"""
         for widget in self.plan_container.winfo_children():
             widget.destroy()
 
-        # Create loading frame
-        self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
-        self.loading_frame.pack(fill="both", expand=True)
-
-        # Create a container to center the content vertically
-        center_container = tk.Frame(self.loading_frame, bg='#212529')
-        center_container.place(relx=0.5, rely=0.4, anchor="center")
-
-        self.loading_label = tk.Label(
-            center_container,
-            text="Generating new workout plan...",
-            font=("Helvetica", 16),
-            bg='#212529',
-            fg='white'
-        )
-        self.loading_label.pack(pady=(0, 20))
-
-        # Create progress frame
-        self.progress_frame = tk.Frame(center_container, bg='#212529')
-        self.progress_frame.pack(fill="x")
-
-        # Initialize progress steps
-        self.progress_steps = []
-        steps = [
-            "Analyzing your preferences...",
-            "Designing workout structure...",
-            "Selecting exercises...",
-            "Generating exercise instructions...",
-            "Creating your personalized plan..."
-        ]
-        
-        for step in steps:
-            step_label = tk.Label(
-                self.progress_frame,
-                text="○ " + step,
-                font=("Helvetica", 12),
-                bg='#212529',
-                fg='white',
-                anchor="w"
-            )
-            step_label.pack(fill="x", pady=2)
-            self.progress_steps.append(step_label)
+        # Show loading screen with progress bar
+        self.show_loading_screen()
 
         # Start new plan generation
         self.after(100, lambda: self.generate_and_display_plan(self.responses))
