@@ -1022,6 +1022,10 @@ class WorkoutPlanPage(tk.Frame):
         self.button_container = tk.Frame(content_frame, bg='#212529', padx=20, pady=10)
         self.button_container.pack(fill="x", pady=(0, 20))
         
+        # Create a center frame for the buttons
+        center_frame = tk.Frame(self.button_container, bg='#212529')
+        center_frame.pack(expand=True)
+        
         # Create buttons
         width = self.app.winfo_width()
         button_width = 150 if width < 450 else 200
@@ -1029,7 +1033,7 @@ class WorkoutPlanPage(tk.Frame):
         font_size = 12 if width < 450 else 14
         
         # Create refresh plan button
-        self.refresh_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
+        self.refresh_canvas = tk.Canvas(center_frame, bg='#212529', highlightthickness=0, 
                                      height=button_height, width=button_width)
         self.refresh_canvas.pack(side="left", padx=10)
         
@@ -1051,7 +1055,7 @@ class WorkoutPlanPage(tk.Frame):
         self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan(responses))
         
         # Create new plan button
-        self.new_plan_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
+        self.new_plan_canvas = tk.Canvas(center_frame, bg='#212529', highlightthickness=0, 
                                      height=button_height, width=button_width)
         self.new_plan_canvas.pack(side="left", padx=10)
         
