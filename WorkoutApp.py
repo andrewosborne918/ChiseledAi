@@ -913,7 +913,7 @@ class InjuryRestrictions(tk.Frame):
             else:
                 # Unselected state
                 canvas.create_rounded_rect(0, 0, 120, 40, 8,
-                                        fill='', outline='#eb5e28')
+                                        fill='#eb5e28', outline='#eb5e28')
                 label.configure(bg='#212529')
 
     def on_injury_selection(self):
