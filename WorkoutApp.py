@@ -1094,26 +1094,54 @@ class WorkoutPlanPage(tk.Frame):
                 # Subheader
                 subheader_text = line.lstrip('#').strip()
                 self.plan_text.insert("end", subheader_text + "\n", "subheader")
-            elif line.startswith('[') and ']' in line:
-                # Exercise link
-                exercise_name = line[1:-1]  # Remove the brackets
-
-                # Insert the exercise name as a clickable link
-                self.plan_text.insert("end", exercise_name + "\n", "exercise_link")
-
-                # Create a click handler for this exercise
-                def make_click_handler(name):
-                    def handler(event):
-                        instructions = self.exercise_instructions.get(name, "Instructions not available.")
-                        ExerciseInstructionPopup(self, name, instructions)
-                    return handler
-
-                # Bind the click event to the specific text range
-                tag_name = f"link_{exercise_name}"
-                self.plan_text.tag_add(tag_name, "end-2c linestart", "end-1c")
-                self.plan_text.tag_bind(tag_name, "<Button-1>", make_click_handler(exercise_name))
-                self.plan_text.tag_bind(tag_name, "<Enter>", lambda e: self.plan_text.config(cursor="hand2"))
-                self.plan_text.tag_bind(tag_name, "<Leave>", lambda e: self.plan_text.config(cursor=""))
+            elif '[' in line and ']' in line:
+                # Line contains exercise name(s) in brackets
+                current_pos = 0
+                while '[' in line[current_pos:] and ']' in line[current_pos:]:
+                    # Find the next exercise
+                    start = line.find('[', current_pos)
+                    end = line.find(']', start)
+                    
+                    if start > current_pos:
+                        # Insert any text before the exercise name
+                        self.plan_text.insert("end", line[current_pos:start])
+                    
+                    # Extract and insert the exercise name
+                    exercise_name = line[start + 1:end]
+                    
+                    # Create a unique tag for this exercise
+                    tag_name = f"link_{len(self.exercise_instructions)}_{exercise_name}"
+                    self.plan_text.tag_configure(tag_name, font=("Helvetica", 14, "bold"), 
+                                               foreground="#4dabf7", underline=1)
+                    
+                    # Insert the exercise name
+                    start_index = self.plan_text.index("end-1c")
+                    self.plan_text.insert("end", exercise_name)
+                    end_index = self.plan_text.index("end-1c")
+                    
+                    # Apply the tag
+                    self.plan_text.tag_add(tag_name, start_index, end_index)
+                    
+                    # Create click handler for this exercise
+                    def make_click_handler(name):
+                        def handler(event):
+                            instructions = self.exercise_instructions.get(name, "Instructions not available.")
+                            ExerciseInstructionPopup(self, name, instructions)
+                        return handler
+                    
+                    # Bind click event
+                    self.plan_text.tag_bind(tag_name, "<Button-1>", make_click_handler(exercise_name))
+                    self.plan_text.tag_bind(tag_name, "<Enter>", 
+                        lambda e: self.plan_text.config(cursor="hand2"))
+                    self.plan_text.tag_bind(tag_name, "<Leave>", 
+                        lambda e: self.plan_text.config(cursor=""))
+                    
+                    current_pos = end + 1
+                
+                # Add any remaining text after the last exercise
+                if current_pos < len(line):
+                    self.plan_text.insert("end", line[current_pos:])
+                self.plan_text.insert("end", "\n")
             elif line.startswith('-'):
                 # Bullet point
                 bullet_text = line.lstrip('-').strip()
