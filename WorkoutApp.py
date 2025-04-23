@@ -1018,9 +1018,62 @@ class WorkoutPlanPage(tk.Frame):
         content_frame = tk.Frame(self.plan_container, bg='#212529')
         content_frame.pack(fill="both", expand=True)
         
+        # Create button container at the top
+        self.button_container = tk.Frame(content_frame, bg='#212529', padx=20, pady=10)
+        self.button_container.pack(fill="x", pady=(0, 20))
+        
+        # Create buttons
+        width = self.app.winfo_width()
+        button_width = 150 if width < 450 else 200
+        button_height = 40 if width < 450 else 50
+        font_size = 12 if width < 450 else 14
+        
+        # Create refresh plan button
+        self.refresh_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
+                                     height=button_height, width=button_width)
+        self.refresh_canvas.pack(side="left", padx=10)
+        
+        # Draw rounded rectangle with orange outline
+        radius = 10 if width < 450 else 15
+        self.create_rounded_rect(self.refresh_canvas, 0, 0, button_width, button_height, radius, 
+                              fill='#212529', outline='#eb5e28', width=2)
+        
+        # Create the refresh label
+        self.refresh_label = tk.Label(
+            self.refresh_canvas,
+            text="Refresh Plan",
+            font=("Helvetica", font_size, "bold"),
+            bg='#212529',
+            fg='white',
+            cursor="hand2"
+        )
+        self.refresh_label.place(relx=0.5, rely=0.5, anchor='center')
+        self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan(responses))
+        
+        # Create new plan button
+        self.new_plan_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
+                                     height=button_height, width=button_width)
+        self.new_plan_canvas.pack(side="left", padx=10)
+        
+        # Draw rounded rectangle
+        self.create_rounded_rect(self.new_plan_canvas, 0, 0, button_width, button_height, radius, 
+                              fill='#eb5e28', outline='#eb5e28')
+        
+        # Create the new plan label
+        self.new_plan_label = tk.Label(
+            self.new_plan_canvas,
+            text="New Plan",
+            font=("Helvetica", font_size, "bold"),
+            bg='#eb5e28',
+            fg='white',
+            cursor="hand2"
+        )
+        self.new_plan_label.place(relx=0.5, rely=0.5, anchor='center')
+        self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
+        
         # Create a container for the text area that will expand
         text_container = tk.Frame(content_frame, bg='#212529')
-        text_container.pack(fill="both", expand=True, pady=(0, 0))
+        text_container.pack(fill="both", expand=True)
         
         # Create a frame to hold the text widget and scrollbar
         text_frame = tk.Frame(text_container, bg='#212529')
@@ -1135,64 +1188,6 @@ class WorkoutPlanPage(tk.Frame):
         
         # Add some spacing at the end
         self.plan_text.insert("end", "\n\n")
-        
-        # Create a fixed-height frame for the buttons at the bottom
-        button_frame = tk.Frame(content_frame, bg='#212529', height=200)
-        button_frame.pack_propagate(False)  # Prevent the frame from shrinking
-        button_frame.pack(side="bottom", fill="x", expand=False)
-        
-        # Create button container
-        self.button_container = tk.Frame(button_frame, bg='#212529', padx=20, pady=10)
-        self.button_container.pack(expand=True, fill="both")
-        
-        # Create buttons
-        width = self.app.winfo_width()
-        button_width = 150 if width < 450 else 200
-        button_height = 40 if width < 450 else 50
-        font_size = 12 if width < 450 else 14
-        
-        # Create refresh plan button
-        self.refresh_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
-                                     height=button_height, width=button_width)
-        self.refresh_canvas.pack(side="left", padx=10)
-        
-        # Draw rounded rectangle with orange outline
-        radius = 10 if width < 450 else 15
-        self.create_rounded_rect(self.refresh_canvas, 0, 0, button_width, button_height, radius, 
-                              fill='#212529', outline='#eb5e28', width=2)
-        
-        # Create the refresh label
-        self.refresh_label = tk.Label(
-            self.refresh_canvas,
-            text="Refresh Plan",
-            font=("Helvetica", font_size, "bold"),
-            bg='#212529',
-            fg='white',
-            cursor="hand2"
-        )
-        self.refresh_label.place(relx=0.5, rely=0.5, anchor='center')
-        self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan(responses))
-        
-        # Create new plan button
-        self.new_plan_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
-                                     height=button_height, width=button_width)
-        self.new_plan_canvas.pack(side="left", padx=10)
-        
-        # Draw rounded rectangle
-        self.create_rounded_rect(self.new_plan_canvas, 0, 0, button_width, button_height, radius, 
-                              fill='#eb5e28', outline='#eb5e28')
-        
-        # Create the new plan label
-        self.new_plan_label = tk.Label(
-            self.new_plan_canvas,
-            text="New Plan",
-            font=("Helvetica", font_size, "bold"),
-            bg='#eb5e28',
-            fg='white',
-            cursor="hand2"
-        )
-        self.new_plan_label.place(relx=0.5, rely=0.5, anchor='center')
-        self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
         
         # Force update of all widgets
         self.update_idletasks()
