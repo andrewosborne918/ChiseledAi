@@ -1124,7 +1124,69 @@ class WorkoutPlanPage(tk.Frame):
         
         # Add some spacing at the end
         self.plan_text.insert("end", "\n\n")
-    
+        
+        # Create button container
+        self.button_container = tk.Frame(self.main_container, bg='#212529', padx=20, pady=10)
+        self.button_container.pack(side="bottom", pady=20)
+        
+        # Create refresh plan button
+        width = self.app.winfo_width()
+        button_width = 150 if width < 450 else 200
+        button_height = 40 if width < 450 else 50
+        font_size = 12 if width < 450 else 14
+        
+        self.refresh_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
+                                     height=button_height, width=button_width)
+        self.refresh_canvas.pack(side="left", padx=10)
+        
+        # Draw rounded rectangle with orange outline
+        radius = 10 if width < 450 else 15
+        self.create_rounded_rect(self.refresh_canvas, 0, 0, button_width, button_height, radius, 
+                              fill='#212529', outline='#eb5e28', width=2)
+        
+        # Create the label on top of the canvas
+        self.refresh_label = tk.Label(
+            self.refresh_canvas,
+            text="Refresh Plan",
+            font=("Helvetica", font_size, "bold"),
+            bg='#212529',
+            fg='white',
+            cursor="hand2"
+        )
+        self.refresh_label.place(relx=0.5, rely=0.5, anchor='center')
+        self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan(responses))
+        
+        # Create new plan button
+        self.new_plan_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
+                                     height=button_height, width=button_width)
+        self.new_plan_canvas.pack(side="left", padx=10)
+        
+        # Draw rounded rectangle
+        radius = 10 if width < 450 else 15
+        self.create_rounded_rect(self.new_plan_canvas, 0, 0, button_width, button_height, radius, 
+                              fill='#eb5e28', outline='#eb5e28')
+        
+        # Create the label on top of the canvas
+        self.new_plan_label = tk.Label(
+            self.new_plan_canvas,
+            text="New Plan",
+            font=("Helvetica", font_size, "bold"),
+            bg='#eb5e28',
+            fg='white',
+            cursor="hand2"
+        )
+        self.new_plan_label.place(relx=0.5, rely=0.5, anchor='center')
+        self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
+
+    def refresh_plan(self, responses):
+        """Generate a new workout plan with the same preferences"""
+        # Remove the current plan display
+        for widget in self.plan_container.winfo_children():
+            widget.destroy()
+        
+        # Generate and display a new plan
+        self.display_workout_plan(responses, is_saved_plan=False)
+
     def open_url(self, url):
         """Open the URL in the default web browser"""
         import webbrowser
