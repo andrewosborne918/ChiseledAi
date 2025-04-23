@@ -1042,9 +1042,6 @@ class WorkoutPlanPage(tk.Frame):
         # Create refresh plan button
         self.refresh_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
                                          height=button_height, width=button_width)
-        self.refresh_canvas.pack(side="top", fill="x", pady=(0, 5))  # Stack vertically with padding
-
-        # Create the refresh label
         self.refresh_label = tk.Label(
             self.refresh_canvas,
             text="Refresh Plan",
@@ -1053,15 +1050,10 @@ class WorkoutPlanPage(tk.Frame):
             fg='white',
             cursor="hand2"
         )
-        self.refresh_label.place(relx=0.5, rely=0.5, anchor='center')
-        self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan(responses))
 
         # Create new plan button
         self.new_plan_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
                                   height=button_height, width=button_width)
-        self.new_plan_canvas.pack(side="top", fill="x")  # Stack vertically
-
-        # Create the new plan label
         self.new_plan_label = tk.Label(
             self.new_plan_canvas,
             text="New Plan",
@@ -1070,6 +1062,23 @@ class WorkoutPlanPage(tk.Frame):
             fg='white',
             cursor="hand2"
         )
+
+        # Pack buttons based on width
+        if width <= 500:
+            # Stack buttons vertically
+            self.refresh_canvas.pack(side="top", fill="x", pady=(0, 5))
+            self.new_plan_canvas.pack(side="top", fill="x")
+        else:
+            # Pack buttons side by side
+            self.refresh_canvas.pack(side="left", padx=10)
+            self.new_plan_canvas.pack(side="left", padx=10)
+
+        # Finalize button labels
+        self.refresh_canvas.pack(side="top", fill="x", pady=(0, 5))  # Ensure refresh button is packed
+        self.refresh_label.place(relx=0.5, rely=0.5, anchor='center')
+        self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan(responses))
+
+        self.new_plan_canvas.pack(side="top", fill="x")  # Ensure new plan button is packed
         self.new_plan_label.place(relx=0.5, rely=0.5, anchor='center')
         self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
 
