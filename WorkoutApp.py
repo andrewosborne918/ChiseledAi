@@ -1496,6 +1496,58 @@ Workout Style: {responses['Workout Style']}
 Note: We encountered an error while generating your workout plan. Please try again later or contact support if the issue persists.
 Error details: {str(e)}"""
 
+    def refresh_plan(self):
+        """Generate a new workout plan with the same preferences"""
+        # Clear the current plan display
+        for widget in self.plan_container.winfo_children():
+            widget.destroy()
+
+        # Create loading frame
+        self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
+        self.loading_frame.pack(fill="both", expand=True)
+
+        # Create a container to center the content vertically
+        center_container = tk.Frame(self.loading_frame, bg='#212529')
+        center_container.place(relx=0.5, rely=0.4, anchor="center")
+
+        self.loading_label = tk.Label(
+            center_container,
+            text="Generating new workout plan...",
+            font=("Helvetica", 16),
+            bg='#212529',
+            fg='white'
+        )
+        self.loading_label.pack(pady=(0, 20))
+
+        # Create progress frame
+        self.progress_frame = tk.Frame(center_container, bg='#212529')
+        self.progress_frame.pack(fill="x")
+
+        # Initialize progress steps
+        self.progress_steps = []
+        steps = [
+            "Analyzing your preferences...",
+            "Designing workout structure...",
+            "Selecting exercises...",
+            "Generating exercise instructions...",
+            "Creating your personalized plan..."
+        ]
+        
+        for step in steps:
+            step_label = tk.Label(
+                self.progress_frame,
+                text="○ " + step,
+                font=("Helvetica", 12),
+                bg='#212529',
+                fg='white',
+                anchor="w"
+            )
+            step_label.pack(fill="x", pady=2)
+            self.progress_steps.append(step_label)
+
+        # Start new plan generation
+        self.after(100, lambda: self.generate_and_display_plan(self.responses))
+
 
 class ExerciseInstructionPopup(tk.Toplevel):
     def __init__(self, parent, exercise_name, instructions):
