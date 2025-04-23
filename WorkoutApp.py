@@ -23,19 +23,20 @@ def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
     width = kwargs.pop('width', 1)
     color = kwargs.pop('outline', 'black')  # Default color for the outline
 
-    # Start with top-left corner and work clockwise
-    self.create_line(x1 + radius, y1, x2 - radius, y1, width=width, fill=color)  # Top line
-    self.create_line(x2, y1 + radius, x2, y2 - radius, width=width, fill=color)  # Right line
-    self.create_line(x2 - radius, y2, x1 + radius, y2, width=width, fill=color)  # Bottom line
-    self.create_line(x1, y2 - radius, x1, y1 + radius, width=width, fill=color)  # Left line
+    # Define points for the rounded rectangle
+    points = [
+        x1 + radius, y1,  # Top-left corner
+        x2 - radius, y1,  # Top edge
+        x2, y1 + radius,  # Top-right corner
+        x2, y2 - radius,  # Right edge
+        x2 - radius, y2,  # Bottom-right corner
+        x1 + radius, y2,  # Bottom edge
+        x1, y2 - radius,  # Bottom-left corner
+        x1, y1 + radius,  # Left edge
+    ]
 
-    # Create the rounded corners using arcs
-    self.create_arc(x1, y1, x1 + 2 * radius, y1 + 2 * radius, start=90, extent=90, width=width, outline=color)  # Top-left
-    self.create_arc(x2 - 2 * radius, y1, x2, y1 + 2 * radius, start=0, extent=90, width=width, outline=color)  # Top-right
-    self.create_arc(x2 - 2 * radius, y2 - 2 * radius, x2, y2, start=270, extent=90, width=width, outline=color)  # Bottom-right
-    self.create_arc(x1, y2 - 2 * radius, x1 + 2 * radius, y2, start=180, extent=90, width=width, outline=color)  # Bottom-left
-
-    return None  # Since we're drawing multiple shapes, we don't return a single handle
+    # Create the rounded rectangle
+    return self.create_polygon(points, smooth=True, fill=kwargs.get('fill', ''), outline=color, width=width)
 
 # Add the method to the Canvas class
 tk.Canvas.create_rounded_rect = create_rounded_rect
