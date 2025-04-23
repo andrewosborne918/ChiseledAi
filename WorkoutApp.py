@@ -1019,7 +1019,9 @@ class WorkoutPlanPage(tk.Frame):
         # Create a text widget for the workout plan
         self.plan_text = tk.Text(text_frame, wrap=tk.WORD, bg='#212529', fg='white',
                                font=("Helvetica", 14), padx=10, pady=10,
-                               spacing1=5, spacing2=2, spacing3=5)  # Add line spacing
+                               spacing1=5, spacing2=2, spacing3=5,
+                               highlightthickness=0,  # Remove highlight border
+                               borderwidth=0)  # Remove border
         self.plan_text.pack(side="left", fill="both", expand=True)
         
         # Add scrollbar
@@ -1126,7 +1128,7 @@ class WorkoutPlanPage(tk.Frame):
         
         # Create button container
         self.button_container = tk.Frame(self.main_container, bg='#212529', padx=20, pady=10)
-        self.button_container.pack(side="bottom", pady=20, fill="x")
+        self.button_container.pack(side="bottom", pady=20, fill="x", expand=True)
         
         # Create buttons
         width = self.app.winfo_width()
