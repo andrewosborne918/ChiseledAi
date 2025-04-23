@@ -1128,7 +1128,7 @@ class WorkoutPlanPage(tk.Frame):
         
         # Create button container
         self.button_container = tk.Frame(self.main_container, bg='#212529', padx=20, pady=10)
-        self.button_container.pack(side="bottom", pady=20, fill="x", expand=True)
+        self.button_container.pack(side="bottom", pady=20, fill="x", expand=False)  # Changed expand to False
         
         # Create buttons
         width = self.app.winfo_width()
