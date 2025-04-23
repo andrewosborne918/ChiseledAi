@@ -1412,22 +1412,44 @@ class ExerciseInstructionPopup(tk.Toplevel):
         self.text_widget.tag_configure("section_header", 
                                      font=("Helvetica", 16, "bold"), 
                                      foreground="#eb5e28")
+        self.text_widget.tag_configure("subsection_header", 
+                                     font=("Helvetica", 14, "bold"), 
+                                     foreground="#eb5e28",
+                                     lmargin1=20,
+                                     lmargin2=20)
         self.text_widget.tag_configure("bullet", 
-                                     lmargin1=20, 
-                                     lmargin2=40)
+                                     lmargin1=40, 
+                                     lmargin2=60)
         self.text_widget.tag_configure("normal", 
-                                     font=("Helvetica", 14))
+                                     font=("Helvetica", 14),
+                                     lmargin1=20,
+                                     lmargin2=20)
+        self.text_widget.tag_configure("subnormal", 
+                                     font=("Helvetica", 14),
+                                     lmargin1=40,
+                                     lmargin2=40)
 
         # Process and insert the instructions with formatting
         sections = instructions.split('\n')
+        in_subsection = False
+        current_section = None
+        
         for section in sections:
             section = section.strip()
             if not section:
                 self.text_widget.insert("end", "\n")
                 continue
 
+            # Remove markdown symbols while preserving content
+            section = section.replace('**', '')  # Remove bold markers
+            section = section.replace('*', '')   # Remove italic markers
+            section = section.replace('###', '') # Remove H3 markers
+            section = section.replace('##', '')  # Remove H2 markers
+            section = section.replace('#', '')   # Remove H1 markers
+            
             if section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')):
-                # Section headers
+                # Main section headers
+                current_section = section.split('.')[0]
                 parts = section.split(':', 1)
                 if len(parts) == 2:
                     self.text_widget.insert("end", f"{parts[0]}:\n", "section_header")
@@ -1435,12 +1457,25 @@ class ExerciseInstructionPopup(tk.Toplevel):
                         self.text_widget.insert("end", f"{parts[1].strip()}\n", "normal")
                 else:
                     self.text_widget.insert("end", f"{section}\n", "section_header")
-            elif section.startswith('-'):
-                # Bullet points
-                self.text_widget.insert("end", "• " + section[1:].strip() + "\n", "bullet")
+                in_subsection = False
+            elif section.startswith(('-', '•')):
+                # Bullet points - determine if it's a main bullet or sub-bullet
+                text = section.lstrip('-').lstrip('•').strip()
+                if in_subsection:
+                    # Add extra indentation for bullets within subsections
+                    self.text_widget.insert("end", "  • " + text + "\n", "bullet")
+                else:
+                    self.text_widget.insert("end", "• " + text + "\n", "bullet")
+            elif ':' in section and not section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')):
+                # Subsection headers (like "Starting Position:", "Form:", etc.)
+                in_subsection = True
+                self.text_widget.insert("end", section + "\n", "subsection_header")
             else:
-                # Normal text
-                self.text_widget.insert("end", section + "\n", "normal")
+                # Normal text - use appropriate indentation based on context
+                if in_subsection:
+                    self.text_widget.insert("end", section + "\n", "subnormal")
+                else:
+                    self.text_widget.insert("end", section + "\n", "normal")
 
         # Make text widget read-only
         self.text_widget.config(state="disabled")
