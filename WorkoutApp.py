@@ -460,7 +460,7 @@ class WorkoutApp(tk.Tk):
             self.injury_section,
             self.style_section
         ]
-        
+
         # Initialize current section index
         self.current_section_index = 0
         
@@ -478,7 +478,6 @@ class WorkoutApp(tk.Tk):
         
         # Update question numbering based on the current path
         if self.focus_var.get() == "Target muscle group":
-            # Update numbering for target muscle group path
             self.goal_section.update_numbering(3)
             self.experience_section.update_numbering(4)
             self.equipment_section.update_numbering(5)
@@ -487,7 +486,6 @@ class WorkoutApp(tk.Tk):
             self.injury_section.update_numbering(8)
             self.style_section.update_numbering(9)
         else:
-            # Update numbering for full body path
             self.goal_section.update_numbering(2)
             self.experience_section.update_numbering(3)
             self.equipment_section.update_numbering(4)
@@ -669,8 +667,8 @@ class WorkoutGoal(tk.Frame):
         self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
         dropdown = ttk.Combobox(self.center_frame, textvariable=app.goal_var,
-                              values=["Build muscle", "Lose fat", "Increase endurance",
-                                      "Improve flexibility/mobility", "General fitness"])
+                                values=["Build muscle", "Lose fat", "Increase endurance",
+                                        "Improve flexibility/mobility", "General fitness"])
         dropdown.pack(fill="x", pady=5)
         # Remove automatic advancement
         dropdown.bind("<<ComboboxSelected>>", lambda e: None)
@@ -695,7 +693,7 @@ class ExperienceLevel(tk.Frame):
             tk.Radiobutton(self.center_frame, text=level, variable=app.experience_var, value=level,
                           command=lambda: None, font=("Helvetica", 12),
                           bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
-    
+
     def update_numbering(self, number):
         self.question_label.config(text=f"{number}. What is your fitness level?")
 
@@ -888,7 +886,7 @@ class WorkoutStyle(tk.Frame):
         self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
         dropdown = ttk.Combobox(self.center_frame, textvariable=app.style_var,
-                              values=["Circuit", "Supersets", "Traditional sets", "HIIT", "Yoga/Pilates", "Stretching/Mobility"])
+                                values=["Circuit", "Supersets", "Traditional sets", "HIIT", "Yoga/Pilates", "Stretching/Mobility"])
         dropdown.pack(fill="x", pady=5)
         # Remove automatic advancement
         dropdown.bind("<<ComboboxSelected>>", lambda e: None)
@@ -1022,7 +1020,7 @@ class WorkoutPlanPage(tk.Frame):
         
         # Create a container for the text area that will expand
         text_container = tk.Frame(content_frame, bg='#212529')
-        text_container.pack(fill="both", expand=True, pady=(0, 10))
+        text_container.pack(fill="both", expand=True, pady=(0, 0))
         
         # Create a frame to hold the text widget and scrollbar
         text_frame = tk.Frame(text_container, bg='#212529')
@@ -1139,7 +1137,8 @@ class WorkoutPlanPage(tk.Frame):
         self.plan_text.insert("end", "\n\n")
         
         # Create a fixed-height frame for the buttons at the bottom
-        button_frame = tk.Frame(content_frame, bg='#212529', height=70)
+        button_frame = tk.Frame(content_frame, bg='#212529', height=80)
+        button_frame.pack_propagate(False)  # Prevent the frame from shrinking
         button_frame.pack(side="bottom", fill="x", expand=False)
         
         # Create button container
