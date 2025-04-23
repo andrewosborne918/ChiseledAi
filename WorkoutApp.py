@@ -1211,7 +1211,7 @@ class WorkoutPlanPage(tk.Frame):
         button_frame = tk.Frame(self.button_container, bg='#212529')
         button_frame.pack(expand=True)
 
-        # Create refresh button
+        # Create refresh button (clear with orange outline)
         self.refresh_canvas = tk.Canvas(button_frame, width=150, height=40, 
                                       bg='#212529', highlightthickness=0)
         self.refresh_canvas.pack(side="left", padx=10)
@@ -1240,13 +1240,13 @@ class WorkoutPlanPage(tk.Frame):
         self.refresh_canvas.bind("<Leave>", on_refresh_leave)
         self.refresh_label.bind("<Leave>", on_refresh_leave)
 
-        # Create new plan button (similar changes can be made here if needed)
+        # Create new plan button (full orange)
         self.new_plan_canvas = tk.Canvas(button_frame, width=150, height=40, 
                                        bg='#212529', highlightthickness=0)
         self.new_plan_canvas.pack(side="left", padx=10)
-        self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='', outline='#eb5e28')  # Clear background with orange outline
+        self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#eb5e28', outline='#eb5e28')  # Full orange
         self.new_plan_label = tk.Label(self.new_plan_canvas, text="New Plan", 
-                                     font=("Helvetica", 12, "bold"), bg='#212529', fg='white')  # White text
+                                     font=("Helvetica", 12, "bold"), bg='#eb5e28', fg='white')  # White text
         self.new_plan_label.place(relx=0.5, rely=0.5, anchor="center")
         
         # Bind both canvas and label for better click handling
