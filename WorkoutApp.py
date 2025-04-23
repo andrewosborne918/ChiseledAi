@@ -958,6 +958,24 @@ class WorkoutPlanPage(tk.Frame):
             # Display saved plan immediately
             self.display_workout_plan(responses, is_saved_plan=True)
     
+    def create_rounded_rect(self, canvas, x1, y1, x2, y2, radius, **kwargs):
+        """Create a rounded rectangle on the canvas"""
+        points = [
+            x1+radius, y1,
+            x2-radius, y1,
+            x2, y1,
+            x2, y1+radius,
+            x2, y2-radius,
+            x2, y2,
+            x2-radius, y2,
+            x1+radius, y2,
+            x1, y2,
+            x1, y2-radius,
+            x1, y1+radius,
+            x1, y1,
+        ]
+        return canvas.create_polygon(points, smooth=True, **kwargs)
+    
     def animate_loading(self):
         """Animate the loading dots"""
         if hasattr(self, 'loading_dots') and self.loading_dots.winfo_exists():
@@ -1158,24 +1176,6 @@ class WorkoutPlanPage(tk.Frame):
         )
         self.new_plan_label.place(relx=0.5, rely=0.5, anchor='center')
         self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
-
-    def create_rounded_rect(self, canvas, x1, y1, x2, y2, radius, **kwargs):
-        """Create a rounded rectangle on the canvas"""
-        points = [
-            x1+radius, y1,
-            x2-radius, y1,
-            x2, y1,
-            x2, y1+radius,
-            x2, y2-radius,
-            x2, y2,
-            x2-radius, y2,
-            x1+radius, y2,
-            x1, y2,
-            x1, y2-radius,
-            x1, y1+radius,
-            x1, y1,
-        ]
-        return canvas.create_polygon(points, smooth=True, **kwargs)
 
     def refresh_plan(self, responses):
         """Generate a new workout plan with the same preferences"""
