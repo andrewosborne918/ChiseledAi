@@ -69,101 +69,36 @@ model = genai.GenerativeModel('gemini-1.5-flash-latest')
 youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
 
 
-class ExerciseDatabase:
-    def __init__(self, excel_path: str):
-        """Initialize the exercise database from an Excel file"""
-        try:
-            self.df = pd.read_excel(excel_path)
-            logging.info(f"Successfully loaded exercise database from {excel_path}")
-            self._validate_database()
-        except Exception as e:
-            logging.error(f"Error loading exercise database: {e}")
-            raise
-
-    def _validate_database(self):
-        """Validate that the database has the required columns"""
-        required_columns = ['exercise_name', 'difficulty', 'muscle_group', 'video_url']
-        missing_columns = [col for col in required_columns if col not in self.df.columns]
-        if missing_columns:
-            logging.warning(f"Missing columns in exercise database: {missing_columns}")
-            # Add missing columns with default values
-            for col in missing_columns:
-                if col == 'video_url':
-                    self.df[col] = None
-                else:
-                    self.df[col] = 'Unknown'
-            logging.info("Added default values for missing columns")
-
-    def get_exercises_by_muscle_group(self, muscle_group: str) -> List[Dict]:
-        """Get all exercises for a specific muscle group"""
-        return self.df[self.df['muscle_group'] == muscle_group].to_dict('records')
-
-    def get_exercises_by_difficulty(self, difficulty: str) -> List[Dict]:
-        """Get all exercises of a specific difficulty level"""
-        return self.df[self.df['difficulty'] == difficulty].to_dict('records')
-
-    def get_exercises_by_equipment(self, equipment: str) -> List[Dict]:
-        """Get all exercises that can be done with specific equipment"""
-        if 'equipment' in self.df.columns:
-            return self.df[self.df['equipment'] == equipment].to_dict('records')
-        else:
-            logging.warning("Equipment column not found, returning all exercises")
-            return self.df.to_dict('records')
-
-    def get_exercise(self, exercise_name: str) -> Optional[Dict]:
-        """Get a specific exercise by name"""
-        exercise = self.df[self.df['exercise_name'] == exercise_name]
-        return exercise.to_dict('records')[0] if not exercise.empty else None
-
-    def get_random_exercises(self, count: int = 1, **filters) -> List[Dict]:
-        """Get random exercises with optional filters"""
-        filtered_df = self.df
-        for key, value in filters.items():
-            if key in self.df.columns:
-                filtered_df = filtered_df[filtered_df[key] == value]
-        return filtered_df.sample(min(count, len(filtered_df))).to_dict('records')
-
-    def get_exercises_by_filters(self, muscle_group: Optional[str] = None,
-                                 difficulty: Optional[str] = None,
-                                 equipment: Optional[str] = None) -> List[Dict]:
-        """Get exercises matching multiple criteria"""
-        filtered_df = self.df
-        if muscle_group:
-            filtered_df = filtered_df[filtered_df['muscle_group'] == muscle_group]
-        if difficulty:
-            filtered_df = filtered_df[filtered_df['difficulty'] == difficulty]
-        if equipment and 'equipment' in self.df.columns:
-            filtered_df = filtered_df[filtered_df['equipment'] == equipment]
-        return filtered_df.to_dict('records')
-
-
-# Initialize the exercise database
-try:
-    EXERCISE_DB = ExerciseDatabase('Exercise_Database.xlsx')  # Updated to match the correct filename
-except Exception as e:
-    logging.error(f"Failed to initialize exercise database: {e}")
-    EXERCISE_DB = None
-
-
 def get_youtube_video(exercise_name):
     """Return a YouTube search URL for the exercise"""
     try:
-        if EXERCISE_DB:
-            exercise = EXERCISE_DB.get_exercise(exercise_name)
-            if exercise and exercise.get('video_url'):
-                logging.info(f"Found video URL in database for {exercise_name}: {exercise['video_url']}")
-                return exercise['video_url'], "Exercise Database"
-            else:
-                logging.info(f"No video URL found in database for {exercise_name}")
-
-        # Fallback to YouTube search if no database match
+        # Create a search query
         search_query = f"{exercise_name} exercise tutorial proper form"
-        search_url = f"https://www.youtube.com/results?search_query={search_query.replace(' ', '+')}"
-        logging.info(f"Using YouTube search URL for {exercise_name}: {search_url}")
-        return search_url, "YouTube Search"
+        
+        # Search YouTube
+        request = youtube.search().list(
+            part="snippet",
+            q=search_query,
+            type="video",
+            maxResults=1
+        )
+        response = request.execute()
+        
+        # Get the first video result
+        if response['items']:
+            video_id = response['items'][0]['id']['videoId']
+            video_url = f"https://www.youtube.com/watch?v={video_id}"
+            logging.info(f"Found YouTube video for {exercise_name}: {video_url}")
+            return video_url, "YouTube"
+        else:
+            # Fallback to search URL if no direct video found
+            search_url = f"https://www.youtube.com/results?search_query={search_query.replace(' ', '+')}"
+            logging.info(f"Using YouTube search URL for {exercise_name}: {search_url}")
+            return search_url, "YouTube Search"
     except Exception as e:
         logging.error(f"Error getting video URL for {exercise_name}: {e}")
-        return None, None
+        search_url = f"https://www.youtube.com/results?search_query={search_query.replace(' ', '+')}"
+        return search_url, "YouTube Search"
 
 
 def git_sync(commit_message="Auto-sync: Updated workout plan"):
@@ -1278,30 +1213,6 @@ class WorkoutPlanPage(tk.Frame):
 
     def generate_workout_plan(self, responses):
         # Create a prompt for Gemini based on user responses
-        available_exercises = []
-        if EXERCISE_DB:
-            # Get exercises based on user's equipment
-            for equipment in responses['Equipment']:
-                exercises = EXERCISE_DB.get_exercises_by_equipment(equipment)
-                available_exercises.extend(exercises)
-                logging.info(f"Found {len(exercises)} exercises for equipment: {equipment}")
-
-            # If no exercises found for specific equipment, get all exercises
-            if not available_exercises:
-                available_exercises = EXERCISE_DB.get_random_exercises(20)
-                logging.info("No exercises found for specific equipment, using random exercises")
-
-            # Get unique exercise names
-            exercise_names = list(set(ex['exercise_name'] for ex in available_exercises))
-            logging.info(f"Available exercises: {exercise_names}")
-
-            # Create a prompt that explicitly lists the exercises
-            exercise_list = "\n".join([f"- {name}" for name in exercise_names])
-        else:
-            exercise_names = []
-            exercise_list = ""
-            logging.warning("Exercise database not available")
-
         prompt = f"""Create a detailed, personalized workout plan based on the following user preferences:
 
 Workout Focus: {responses['Workout Focus']}
@@ -1314,25 +1225,27 @@ Location: {responses['Location']}
 {"Injuries/Restrictions: " + responses['Injuries'] if responses['Injuries'] else ""}
 Workout Style: {responses['Workout Style']}
 
-Available Exercises:
-{exercise_list}
-
 Please provide a comprehensive workout plan that includes:
 1. A warm-up routine
 2. Main workout exercises with sets, reps, and rest periods
 3. A cool-down routine
 4. Any specific notes or modifications based on the user's preferences and restrictions
 
+Important Guidelines:
+1. Only suggest exercises that can be done with the available equipment
+2. Ensure exercises are appropriate for the user's experience level
+3. Account for any injuries or restrictions in the exercise selection
+4. Match the workout duration to the user's preference
+5. Consider the workout location in exercise selection
+
 Formatting Guidelines:
-1. If there is any information that is sexual or violent, please ignore it
-2. Use markup to format the workouts
-3. Make the title of the workout an H1 (use #)
-4. Make the different workout block headers an H2 (use ##)
-5. For each exercise:
-   - Use ONLY the exact exercise names from the list above
-   - Do not modify or combine exercise names
+1. Use markup to format the workouts
+2. Make the title of the workout an H1 (use #)
+3. Make the different workout block headers an H2 (use ##)
+4. For each exercise:
+   - Use clear, common exercise names
    - Include sets, reps, rest time, and important notes
-6. Use clear spacing between sections and exercises
+5. Use clear spacing between sections and exercises
 
 Format the plan in a clear, easy-to-follow structure. Use the following format:
 
@@ -1414,30 +1327,19 @@ Format the plan in a clear, easy-to-follow structure. Use the following format:
 
             for line in lines:
                 line = line.strip()
-                # Check if the line is an exercise name (not a header, bullet point, or already linked)
+                # Check if the line contains an exercise name (not a header, bullet point, or already linked)
                 if (line and
                         not line.startswith(('#', '-', '[')) and
-                        ']' not in line):
-                    # Try to find a matching exercise name
-                    matching_exercise = None
-                    for exercise in exercise_names:
-                        if exercise.lower() == line.lower():
-                            matching_exercise = exercise
-                            logging.info(f"Found exact match for exercise: {exercise}")
-                            break
-
-                    if matching_exercise:
-                        logging.info(f"Getting video for exercise: {matching_exercise}")
-                        video_url, source = get_youtube_video(matching_exercise)
-                        if video_url:
-                            processed_lines.append(f"[{matching_exercise}]({video_url}) - {source}")
-                            logging.info(f"Added video link for {matching_exercise}: {video_url}")
-                        else:
-                            processed_lines.append(matching_exercise)
-                            logging.warning(f"No video found for {matching_exercise}")
+                        ']' not in line and
+                        ':' not in line):  # Skip lines with colons (typically metadata lines)
+                    # Get video for the exercise
+                    video_url, source = get_youtube_video(line)
+                    if video_url:
+                        processed_lines.append(f"[{line}]({video_url})")
+                        logging.info(f"Added video link for {line}: {video_url}")
                     else:
                         processed_lines.append(line)
-                        logging.debug(f"No match found for line: {line}")
+                        logging.warning(f"No video found for {line}")
                 else:
                     processed_lines.append(line)
 
