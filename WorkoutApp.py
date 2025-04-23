@@ -1221,8 +1221,8 @@ class WorkoutPlanPage(tk.Frame):
         self.refresh_label.place(relx=0.5, rely=0.5, anchor="center")
         
         # Bind both canvas and label for better click handling
-        self.refresh_canvas.bind("<Button-1>", lambda e: self.refresh_plan(self.responses))
-        self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan(self.responses))
+        self.refresh_canvas.bind("<Button-1>", lambda e: self.refresh_plan())
+        self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan())
         
         # Add hover effect for refresh button
         def on_refresh_enter(e):
@@ -1269,14 +1269,19 @@ class WorkoutPlanPage(tk.Frame):
         self.new_plan_canvas.bind("<Leave>", on_new_plan_leave)
         self.new_plan_label.bind("<Leave>", on_new_plan_leave)
 
-    def refresh_plan(self, responses):
+    def refresh_plan(self):
         """Generate a new workout plan with the same preferences"""
-        # Remove the current plan display
+        # Clear the current plan display
         for widget in self.plan_container.winfo_children():
             widget.destroy()
 
-        # Generate and display a new plan
-        self.display_workout_plan(self.responses, is_saved_plan=False)  # Use self.responses instead of responses parameter
+        # Show loading message
+        loading_label = tk.Label(self.plan_container, text="Loading your new plan...", 
+                                 font=("Helvetica", 16), bg='#212529', fg='white')
+        loading_label.pack(expand=True)
+
+        # Optionally, you can add a delay before generating the new plan
+        self.after(1000, lambda: self.display_workout_plan(self.responses, is_saved_plan=False))
 
     def open_url(self, url):
         """Open the URL in the default web browser"""
