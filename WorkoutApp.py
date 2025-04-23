@@ -1249,46 +1249,69 @@ class WorkoutPlanPage(tk.Frame):
         button_frame.pack(expand=True)
 
         # Create refresh button (clear with orange outline)
-        self.refresh_canvas = tk.Canvas(button_frame, width=150, height=40, 
+        self.refresh_canvas = tk.Canvas(button_frame, width=150, height=40,
                                       bg='#212529', highlightthickness=0)
         self.refresh_canvas.pack(side="left", padx=10)
-        self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='', outline='#eb5e28', width=2)
-        self.refresh_label = tk.Label(self.refresh_canvas, text="Refresh Plan", 
-                                    font=("Helvetica", 12, "bold"), bg='#212529', fg='white')  # White text
+        self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8,
+                                              fill='#212529', outline='#eb5e28', width=2)
+        self.refresh_label = tk.Label(self.refresh_canvas, text="Refresh Plan",
+                                    font=("Helvetica", 12, "bold"),
+                                    bg='#212529', fg='white')
         self.refresh_label.place(relx=0.5, rely=0.5, anchor="center")
-        
+
         # Bind both canvas and label for better click handling
         self.refresh_canvas.bind("<Button-1>", lambda e: self.refresh_plan())
         self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan())
-        
+
         # Add hover effect for refresh button
         def on_refresh_enter(e):
             self.refresh_canvas.delete("all")
-            self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#d44e1e', outline='#d44e1e', width=2)  # Darker outline on hover
-            self.refresh_label.configure(bg='#d44e1e')
-        
+            self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8,
+                                                 fill='#2b3035', outline='#eb5e28', width=2)
+            self.refresh_label.configure(bg='#2b3035')
+
         def on_refresh_leave(e):
             self.refresh_canvas.delete("all")
-            self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='', outline='#eb5e28', width=2)  # Reset to clear background
+            self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8,
+                                                 fill='#212529', outline='#eb5e28', width=2)
             self.refresh_label.configure(bg='#212529')
-        
+
         self.refresh_canvas.bind("<Enter>", on_refresh_enter)
         self.refresh_label.bind("<Enter>", on_refresh_enter)
         self.refresh_canvas.bind("<Leave>", on_refresh_leave)
         self.refresh_label.bind("<Leave>", on_refresh_leave)
 
         # Create new plan button (full orange)
-        self.new_plan_canvas = tk.Canvas(button_frame, width=150, height=40, 
+        self.new_plan_canvas = tk.Canvas(button_frame, width=150, height=40,
                                        bg='#212529', highlightthickness=0)
         self.new_plan_canvas.pack(side="left", padx=10)
-        self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#eb5e28', outline='#eb5e28', width=2)  # Full orange
-        self.new_plan_label = tk.Label(self.new_plan_canvas, text="New Plan", 
-                                     font=("Helvetica", 12, "bold"), bg='#eb5e28', fg='white')  # White text
+        self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8,
+                                               fill='#eb5e28', outline='#eb5e28')
+        self.new_plan_label = tk.Label(self.new_plan_canvas, text="New Plan",
+                                     font=("Helvetica", 12, "bold"),
+                                     bg='#eb5e28', fg='white')
         self.new_plan_label.place(relx=0.5, rely=0.5, anchor="center")
-        
+
+        # Add hover effect for new plan button
+        def on_new_plan_enter(e):
+            self.new_plan_canvas.delete("all")
+            self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8,
+                                                   fill='#d44e1e', outline='#d44e1e')
+            self.new_plan_label.configure(bg='#d44e1e')
+
+        def on_new_plan_leave(e):
+            self.new_plan_canvas.delete("all")
+            self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8,
+                                                   fill='#eb5e28', outline='#eb5e28')
+            self.new_plan_label.configure(bg='#eb5e28')
+
         # Bind both canvas and label for better click handling
         self.new_plan_canvas.bind("<Button-1>", lambda e: self.start_new_plan())
         self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
+        self.new_plan_canvas.bind("<Enter>", on_new_plan_enter)
+        self.new_plan_label.bind("<Enter>", on_new_plan_enter)
+        self.new_plan_canvas.bind("<Leave>", on_new_plan_leave)
+        self.new_plan_label.bind("<Leave>", on_new_plan_leave)
 
     def refresh_plan(self):
         """Generate a new workout plan with the same preferences"""
