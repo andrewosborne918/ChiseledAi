@@ -20,18 +20,14 @@ from typing import Dict, List, Optional
 def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
     """Create a rounded rectangle on the canvas"""
     points = [
-        x1 + radius, y1,
-        x2 - radius, y1,
-        x2, y1,
-        x2, y1 + radius,
-        x2, y2 - radius,
-        x2, y2,
-        x2 - radius, y2,
-        x1 + radius, y2,
-        x1, y2,
-        x1, y2 - radius,
-        x1, y1 + radius,
-        x1, y1,
+        x1 + radius, y1,  # Top-left corner
+        x2 - radius, y1,  # Top-right corner
+        x2, y1 + radius,  # Top-right curve
+        x2, y2 - radius,  # Bottom-right curve
+        x2 - radius, y2,  # Bottom-right corner
+        x1, y2,           # Bottom-left corner
+        x1, y2 - radius,  # Bottom-left curve
+        x1 + radius, y1   # Top-left curve
     ]
     return self.create_polygon(points, smooth=True, **kwargs)
 
@@ -552,12 +548,9 @@ class WorkoutApp(tk.Tk):
                 points = [
                     x1 + radius, y1,
                     x2 - radius, y1,
-                    x2, y1,
                     x2, y1 + radius,
                     x2, y2 - radius,
-                    x2, y2,
                     x2 - radius, y2,
-                    x1 + radius, y2,
                     x1, y2,
                     x1, y2 - radius,
                     x1, y1 + radius,
@@ -1215,7 +1208,7 @@ class WorkoutPlanPage(tk.Frame):
         self.refresh_canvas = tk.Canvas(button_frame, width=150, height=40, 
                                       bg='#212529', highlightthickness=0)
         self.refresh_canvas.pack(side="left", padx=10)
-        self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='', outline='#eb5e28')  # Clear background with orange outline
+        self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='', outline='#eb5e28', width=2)
         self.refresh_label = tk.Label(self.refresh_canvas, text="Refresh Plan", 
                                     font=("Helvetica", 12, "bold"), bg='#212529', fg='white')  # White text
         self.refresh_label.place(relx=0.5, rely=0.5, anchor="center")
@@ -1227,12 +1220,12 @@ class WorkoutPlanPage(tk.Frame):
         # Add hover effect for refresh button
         def on_refresh_enter(e):
             self.refresh_canvas.delete("all")
-            self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#d44e1e', outline='#d44e1e')  # Darker outline on hover
+            self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#d44e1e', outline='#d44e1e', width=2)  # Darker outline on hover
             self.refresh_label.configure(bg='#d44e1e')
         
         def on_refresh_leave(e):
             self.refresh_canvas.delete("all")
-            self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='', outline='#eb5e28')  # Reset to clear background
+            self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='', outline='#eb5e28', width=2)  # Reset to clear background
             self.refresh_label.configure(bg='#212529')
         
         self.refresh_canvas.bind("<Enter>", on_refresh_enter)
@@ -1244,7 +1237,7 @@ class WorkoutPlanPage(tk.Frame):
         self.new_plan_canvas = tk.Canvas(button_frame, width=150, height=40, 
                                        bg='#212529', highlightthickness=0)
         self.new_plan_canvas.pack(side="left", padx=10)
-        self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#eb5e28', outline='#eb5e28')  # Full orange
+        self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#eb5e28', outline='#eb5e28', width=2)  # Full orange
         self.new_plan_label = tk.Label(self.new_plan_canvas, text="New Plan", 
                                      font=("Helvetica", 12, "bold"), bg='#eb5e28', fg='white')  # White text
         self.new_plan_label.place(relx=0.5, rely=0.5, anchor="center")
