@@ -1137,7 +1137,7 @@ class WorkoutPlanPage(tk.Frame):
         self.plan_text.insert("end", "\n\n")
         
         # Create a fixed-height frame for the buttons at the bottom
-        button_frame = tk.Frame(content_frame, bg='#212529', height=80)
+        button_frame = tk.Frame(content_frame, bg='#212529', height=200)
         button_frame.pack_propagate(False)  # Prevent the frame from shrinking
         button_frame.pack(side="bottom", fill="x", expand=False)
         
