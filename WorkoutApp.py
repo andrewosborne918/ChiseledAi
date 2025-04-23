@@ -18,18 +18,23 @@ from typing import Dict, List, Optional
 
 # Add rounded rectangle method to Canvas class
 def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
-    """Create a rounded rectangle on the canvas"""
-    points = [
-        x1 + radius, y1,  # Top-left corner
-        x2 - radius, y1,  # Top-right corner
-        x2, y1 + radius,  # Top-right curve
-        x2, y2 - radius,  # Bottom-right curve
-        x2 - radius, y2,  # Bottom-right corner
-        x1, y2,           # Bottom-left corner
-        x1, y2 - radius,  # Bottom-left curve
-        x1 + radius, y1   # Top-left curve
-    ]
-    return self.create_polygon(points, smooth=True, **kwargs)
+    """Create a rounded rectangle on the canvas with smooth corners using Bezier curves"""
+    # Handle width parameter for outline thickness
+    width = kwargs.pop('width', 1)
+    
+    # Start with top-left corner and work clockwise
+    self.create_line(x1+radius, y1, x2-radius, y1, width=width, **kwargs)  # Top line
+    self.create_line(x2, y1+radius, x2, y2-radius, width=width, **kwargs)  # Right line
+    self.create_line(x2-radius, y2, x1+radius, y2, width=width, **kwargs)  # Bottom line
+    self.create_line(x1, y2-radius, x1, y1+radius, width=width, **kwargs)  # Left line
+    
+    # Create the rounded corners using arcs
+    self.create_arc(x1, y1, x1+2*radius, y1+2*radius, start=90, extent=90, width=width, **kwargs)  # Top-left
+    self.create_arc(x2-2*radius, y1, x2, y1+2*radius, start=0, extent=90, width=width, **kwargs)  # Top-right
+    self.create_arc(x2-2*radius, y2-2*radius, x2, y2, start=270, extent=90, width=width, **kwargs)  # Bottom-right
+    self.create_arc(x1, y2-2*radius, x1+2*radius, y2, start=180, extent=90, width=width, **kwargs)  # Bottom-left
+    
+    return None  # Since we're drawing multiple shapes, we don't return a single handle
 
 # Add the method to the Canvas class
 tk.Canvas.create_rounded_rect = create_rounded_rect
