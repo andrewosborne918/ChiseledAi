@@ -1126,7 +1126,7 @@ class WorkoutPlanPage(tk.Frame):
         
         # Create button container
         self.button_container = tk.Frame(self.main_container, bg='#212529', padx=20, pady=10)
-        self.button_container.pack(side="bottom", pady=20)
+        self.button_container.pack(side="bottom", pady=20, fill="x")
         
         # Create buttons
         width = self.app.winfo_width()
@@ -1176,6 +1176,9 @@ class WorkoutPlanPage(tk.Frame):
         )
         self.new_plan_label.place(relx=0.5, rely=0.5, anchor='center')
         self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
+        
+        # Force update of all widgets
+        self.update_idletasks()
 
     def refresh_plan(self, responses):
         """Generate a new workout plan with the same preferences"""
