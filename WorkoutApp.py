@@ -18,29 +18,36 @@ from typing import Dict, List, Optional
 
 # Add rounded rectangle method to Canvas class
 def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
-    """Create a rounded rectangle on the canvas with smooth corners using a single polygon."""
+    """Create a rounded rectangle on the canvas."""
     # Ensure radius doesn't exceed half the width or height
     radius = min(radius, abs(x2 - x1) / 2, abs(y2 - y1) / 2)
 
-    # Define points for the rounded rectangle
-    points = [
-        x1 + radius, y1,  # Top edge starting point
-        x2 - radius, y1,  # Top edge ending point
-        x2, y1,          # Top-right corner control point
-        x2, y1 + radius, # Right edge starting point
-        x2, y2 - radius, # Right edge ending point
-        x2, y2,         # Bottom-right corner control point
-        x2 - radius, y2, # Bottom edge starting point
-        x1 + radius, y2, # Bottom edge ending point
-        x1, y2,         # Bottom-left corner control point
-        x1, y2 - radius, # Left edge starting point
-        x1, y1 + radius, # Left edge ending point
-        x1, y1,         # Top-left corner control point
-        x1 + radius, y1  # Back to start
-    ]
+    # Draw the main rectangle
+    if kwargs.get('fill'):
+        self.create_rectangle(x1 + radius, y1,
+                            x2 - radius, y2,
+                            **kwargs)
+        self.create_rectangle(x1, y1 + radius,
+                            x2, y2 - radius,
+                            **kwargs)
 
-    # Create the rounded rectangle as a single smooth polygon
-    return self.create_polygon(points, smooth=True, **kwargs)
+    # Draw the four corner arcs
+    self.create_arc(x1, y1, x1 + 2*radius, y1 + 2*radius,
+                    start=90, extent=90, **kwargs)
+    self.create_arc(x2 - 2*radius, y1, x2, y1 + 2*radius,
+                    start=0, extent=90, **kwargs)
+    self.create_arc(x1, y2 - 2*radius, x1 + 2*radius, y2,
+                    start=180, extent=90, **kwargs)
+    self.create_arc(x2 - 2*radius, y2 - 2*radius, x2, y2,
+                    start=270, extent=90, **kwargs)
+
+    # Draw the four sides
+    self.create_line(x1 + radius, y1, x2 - radius, y1, **kwargs)  # Top
+    self.create_line(x2, y1 + radius, x2, y2 - radius, **kwargs)  # Right
+    self.create_line(x1 + radius, y2, x2 - radius, y2, **kwargs)  # Bottom
+    self.create_line(x1, y1 + radius, x1, y2 - radius, **kwargs)  # Left
+
+    return self.find_all()[-1]  # Return the last created item
 
 # Add the method to the Canvas class
 tk.Canvas.create_rounded_rect = create_rounded_rect
@@ -913,7 +920,7 @@ class InjuryRestrictions(tk.Frame):
             else:
                 # Unselected state
                 canvas.create_rounded_rect(0, 0, 120, 40, 8,
-                                        fill='#eb5e28', outline='#eb5e28')
+                                        fill='', outline='#eb5e28')
                 label.configure(bg='#212529')
 
     def on_injury_selection(self):
