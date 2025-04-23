@@ -22,30 +22,52 @@ def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
     # Ensure radius doesn't exceed half the width or height
     radius = min(radius, abs(x2 - x1) / 2, abs(y2 - y1) / 2)
 
-    # Draw the main rectangle
-    if kwargs.get('fill'):
+    # Separate outline and fill parameters
+    outline_color = kwargs.pop('outline', None)
+    fill_color = kwargs.pop('fill', None)
+    width = kwargs.pop('width', 1)
+
+    # Create new kwargs for outline elements
+    outline_kwargs = {'fill': outline_color, 'width': width, **kwargs}
+    # Create new kwargs for filled elements
+    fill_kwargs = {'fill': fill_color, 'outline': '', **kwargs}
+
+    # Draw the main rectangle if fill color is specified
+    if fill_color:
         self.create_rectangle(x1 + radius, y1,
                             x2 - radius, y2,
-                            **kwargs)
+                            **fill_kwargs)
         self.create_rectangle(x1, y1 + radius,
                             x2, y2 - radius,
-                            **kwargs)
+                            **fill_kwargs)
 
-    # Draw the four corner arcs
-    self.create_arc(x1, y1, x1 + 2*radius, y1 + 2*radius,
-                    start=90, extent=90, **kwargs)
-    self.create_arc(x2 - 2*radius, y1, x2, y1 + 2*radius,
-                    start=0, extent=90, **kwargs)
-    self.create_arc(x1, y2 - 2*radius, x1 + 2*radius, y2,
-                    start=180, extent=90, **kwargs)
-    self.create_arc(x2 - 2*radius, y2 - 2*radius, x2, y2,
-                    start=270, extent=90, **kwargs)
+        # Draw the four corner arcs with fill
+        self.create_arc(x1, y1, x1 + 2*radius, y1 + 2*radius,
+                       start=90, extent=90, **fill_kwargs)
+        self.create_arc(x2 - 2*radius, y1, x2, y1 + 2*radius,
+                       start=0, extent=90, **fill_kwargs)
+        self.create_arc(x1, y2 - 2*radius, x1 + 2*radius, y2,
+                       start=180, extent=90, **fill_kwargs)
+        self.create_arc(x2 - 2*radius, y2 - 2*radius, x2, y2,
+                       start=270, extent=90, **fill_kwargs)
 
-    # Draw the four sides
-    self.create_line(x1 + radius, y1, x2 - radius, y1, **kwargs)  # Top
-    self.create_line(x2, y1 + radius, x2, y2 - radius, **kwargs)  # Right
-    self.create_line(x1 + radius, y2, x2 - radius, y2, **kwargs)  # Bottom
-    self.create_line(x1, y1 + radius, x1, y2 - radius, **kwargs)  # Left
+    # Draw the outline if specified
+    if outline_color:
+        # Draw the four sides
+        self.create_line(x1 + radius, y1, x2 - radius, y1, **outline_kwargs)  # Top
+        self.create_line(x2, y1 + radius, x2, y2 - radius, **outline_kwargs)  # Right
+        self.create_line(x1 + radius, y2, x2 - radius, y2, **outline_kwargs)  # Bottom
+        self.create_line(x1, y1 + radius, x1, y2 - radius, **outline_kwargs)  # Left
+
+        # Draw the four corner arcs
+        self.create_arc(x1, y1, x1 + 2*radius, y1 + 2*radius,
+                       start=90, extent=90, **outline_kwargs)
+        self.create_arc(x2 - 2*radius, y1, x2, y1 + 2*radius,
+                       start=0, extent=90, **outline_kwargs)
+        self.create_arc(x1, y2 - 2*radius, x1 + 2*radius, y2,
+                       start=180, extent=90, **outline_kwargs)
+        self.create_arc(x2 - 2*radius, y2 - 2*radius, x2, y2,
+                       start=270, extent=90, **outline_kwargs)
 
     return self.find_all()[-1]  # Return the last created item
 
