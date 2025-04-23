@@ -1073,21 +1073,25 @@ class WorkoutPlanPage(tk.Frame):
         # Process the plan to add video links
         lines = plan.split('\n')
         processed_lines = []
-        in_exercise_block = False
-        current_exercise = None
-
+        in_exercise_section = False
+        
         for line in lines:
             line = line.strip()
             
-            # Check if we're entering an exercise block (line with no special characters)
-            if (line and 
-                not line.startswith(('#', '-', '[', '•')) and 
-                ':' not in line and 
-                '.' not in line and
-                len(line.split()) <= 4):  # Exercise names are typically 1-4 words
-                in_exercise_block = True
-                current_exercise = line
-                # Get video for the exercise
+            # Skip empty lines
+            if not line:
+                processed_lines.append(line)
+                continue
+            
+            # Check if we're in a workout section
+            if line.startswith('##'):
+                in_exercise_section = "Warm-up" in line or "Main Workout" in line or "Cool-down" in line
+                processed_lines.append(line)
+                continue
+            
+            # Process potential exercise names
+            if in_exercise_section and not any(line.startswith(x) for x in ['#', '-', '[', '•']) and ':' not in line and len(line.split()) <= 4:
+                # This is likely an exercise name
                 video_url, source = get_youtube_video(line)
                 if video_url:
                     processed_lines.append(f"[{line}]({video_url})")
@@ -1095,14 +1099,9 @@ class WorkoutPlanPage(tk.Frame):
                 else:
                     processed_lines.append(line)
                     logging.warning(f"No video found for {line}")
-                continue
-
-            # If line starts with - or contains :, we're in the exercise details
-            if line.startswith('-') or ':' in line:
-                in_exercise_block = False
-            
-            # Add line as is
-            processed_lines.append(line)
+            else:
+                # Not an exercise name, add as is
+                processed_lines.append(line)
 
         return '\n'.join(processed_lines)
 
@@ -1286,21 +1285,25 @@ Format the plan in a clear, easy-to-follow structure. Use the following format:
             # Process the plan to add video links
             lines = plan_text.split('\n')
             processed_lines = []
-            in_exercise_block = False
-            current_exercise = None
-
+            in_exercise_section = False
+            
             for line in lines:
                 line = line.strip()
                 
-                # Check if we're entering an exercise block (line with no special characters)
-                if (line and 
-                    not line.startswith(('#', '-', '[', '•')) and 
-                    ':' not in line and 
-                    '.' not in line and
-                    len(line.split()) <= 4):  # Exercise names are typically 1-4 words
-                    in_exercise_block = True
-                    current_exercise = line
-                    # Get video for the exercise
+                # Skip empty lines
+                if not line:
+                    processed_lines.append(line)
+                    continue
+                
+                # Check if we're in a workout section
+                if line.startswith('##'):
+                    in_exercise_section = "Warm-up" in line or "Main Workout" in line or "Cool-down" in line
+                    processed_lines.append(line)
+                    continue
+                
+                # Process potential exercise names
+                if in_exercise_section and not any(line.startswith(x) for x in ['#', '-', '[', '•']) and ':' not in line and len(line.split()) <= 4:
+                    # This is likely an exercise name
                     video_url, source = get_youtube_video(line)
                     if video_url:
                         processed_lines.append(f"[{line}]({video_url})")
@@ -1308,14 +1311,9 @@ Format the plan in a clear, easy-to-follow structure. Use the following format:
                     else:
                         processed_lines.append(line)
                         logging.warning(f"No video found for {line}")
-                    continue
-
-                # If line starts with - or contains :, we're in the exercise details
-                if line.startswith('-') or ':' in line:
-                    in_exercise_block = False
-                
-                # Add line as is
-                processed_lines.append(line)
+                else:
+                    # Not an exercise name, add as is
+                    processed_lines.append(line)
 
             return '\n'.join(processed_lines)
 
