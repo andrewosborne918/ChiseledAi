@@ -604,6 +604,23 @@ class WorkoutApp(tk.Tk):
         # This method is now handled by the navigation buttons
         pass
 
+    def update_button_layout(self):
+        """Update the layout of the buttons based on the window width."""
+        width = self.winfo_width()
+        
+        # Clear previous packing
+        for widget in self.button_container.winfo_children():
+            widget.pack_forget()
+
+        if width <= 500:
+            # Stack buttons vertically
+            self.refresh_canvas.pack(side="top", fill="x", pady=(0, 5))
+            self.new_plan_canvas.pack(side="top", fill="x")
+        else:
+            # Pack buttons side by side
+            self.refresh_canvas.pack(side="left", padx=10)
+            self.new_plan_canvas.pack(side="left", padx=10)
+
 # Each question section as a class
 
 class WorkoutFocus(tk.Frame):
@@ -975,24 +992,6 @@ class WorkoutPlanPage(tk.Frame):
         # Show the main form
         self.app.show_main_form()
     
-    def create_rounded_rect(self, canvas, x1, y1, x2, y2, radius, **kwargs):
-        """Create a rounded rectangle on the canvas"""
-        points = [
-            x1+radius, y1,
-            x2-radius, y1,
-            x2, y1,
-            x2, y1+radius,
-            x2, y2-radius,
-            x2, y2,
-            x2-radius, y2,
-            x1+radius, y2,
-            x1, y2,
-            x1, y2-radius,
-            x1, y1+radius,
-            x1, y1,
-        ]
-        return canvas.create_polygon(points, smooth=True, **kwargs)
-    
     def animate_loading(self):
         """Animate the loading dots"""
         if hasattr(self, 'loading_dots') and self.loading_dots.winfo_exists():
@@ -1064,14 +1063,7 @@ class WorkoutPlanPage(tk.Frame):
         )
 
         # Pack buttons based on width
-        if width <= 500:
-            # Stack buttons vertically
-            self.refresh_canvas.pack(side="top", fill="x", pady=(0, 5))
-            self.new_plan_canvas.pack(side="top", fill="x")
-        else:
-            # Pack buttons side by side
-            self.refresh_canvas.pack(side="left", padx=10)
-            self.new_plan_canvas.pack(side="left", padx=10)
+        self.update_button_layout()
 
         # Finalize button labels
         self.refresh_canvas.pack(side="top", fill="x", pady=(0, 5))  # Ensure refresh button is packed
