@@ -957,55 +957,6 @@ class WorkoutPlanPage(tk.Frame):
         else:
             # Display saved plan immediately
             self.display_workout_plan(responses, is_saved_plan=True)
-        
-        # Create new plan button
-        self.new_plan_frame = tk.Frame(self.main_container, bg='#212529', padx=20, pady=10)
-        self.new_plan_frame.pack(side="bottom", pady=20)
-        
-        # Create a canvas for the rounded button
-        width = self.app.winfo_width()
-        button_width = 150 if width < 450 else 200
-        button_height = 40 if width < 450 else 50
-        font_size = 12 if width < 450 else 14
-        
-        self.new_plan_canvas = tk.Canvas(self.new_plan_frame, bg='#212529', highlightthickness=0, 
-                                     height=button_height, width=button_width)
-        self.new_plan_canvas.pack(fill='x')
-        
-        # Draw rounded rectangle
-        def create_rounded_rect(canvas, x1, y1, x2, y2, radius, **kwargs):
-            points = [
-                x1+radius, y1,
-                x2-radius, y1,
-                x2, y1,
-                x2, y1+radius,
-                x2, y2-radius,
-                x2, y2,
-                x2-radius, y2,
-                x1+radius, y2,
-                x1, y2,
-                x1, y2-radius,
-                x1, y1+radius,
-                x1, y1,
-            ]
-            return canvas.create_polygon(points, smooth=True, **kwargs)
-        
-        # Create the rounded rectangle background
-        radius = 10 if width < 450 else 15
-        create_rounded_rect(self.new_plan_canvas, 0, 0, button_width, button_height, radius, 
-                          fill='#eb5e28', outline='#eb5e28')
-        
-        # Create the label on top of the canvas
-        self.new_plan_label = tk.Label(
-            self.new_plan_canvas,
-            text="New Plan",
-            font=("Helvetica", font_size, "bold"),
-            bg='#eb5e28',
-            fg='white',
-            cursor="hand2"
-        )
-        self.new_plan_label.place(relx=0.5, rely=0.5, anchor='center')
-        self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
     
     def animate_loading(self):
         """Animate the loading dots"""
@@ -1166,28 +1117,6 @@ class WorkoutPlanPage(tk.Frame):
         )
         self.refresh_label.place(relx=0.5, rely=0.5, anchor='center')
         self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan(responses))
-        
-        # Create new plan button
-        self.new_plan_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
-                                     height=button_height, width=button_width)
-        self.new_plan_canvas.pack(side="left", padx=10)
-        
-        # Draw rounded rectangle
-        radius = 10 if width < 450 else 15
-        self.create_rounded_rect(self.new_plan_canvas, 0, 0, button_width, button_height, radius, 
-                              fill='#eb5e28', outline='#eb5e28')
-        
-        # Create the label on top of the canvas
-        self.new_plan_label = tk.Label(
-            self.new_plan_canvas,
-            text="New Plan",
-            font=("Helvetica", font_size, "bold"),
-            bg='#eb5e28',
-            fg='white',
-            cursor="hand2"
-        )
-        self.new_plan_label.place(relx=0.5, rely=0.5, anchor='center')
-        self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
 
     def create_rounded_rect(self, canvas, x1, y1, x2, y2, radius, **kwargs):
         """Create a rounded rectangle on the canvas"""
@@ -1408,12 +1337,6 @@ Workout Style: {responses['Workout Style']}
 
 Note: We encountered an error while generating your workout plan. Please try again later or contact support if the issue persists.
 Error details: {str(e)}"""
-    
-    def start_new_plan(self):
-        # Hide the workout plan page
-        self.pack_forget()
-        # Show the main form again
-        self.app.show_main_form()
 
 if __name__ == "__main__":
     app = WorkoutApp()
