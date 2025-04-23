@@ -1206,45 +1206,67 @@ class WorkoutPlanPage(tk.Frame):
 
     def create_buttons(self):
         """Create the refresh and new plan buttons."""
+        # Create a frame to hold buttons side by side
+        button_frame = tk.Frame(self.button_container, bg='#212529')
+        button_frame.pack(expand=True)
+
         # Create refresh button
-        self.refresh_canvas = tk.Canvas(self.button_container, width=200, height=50, 
+        self.refresh_canvas = tk.Canvas(button_frame, width=150, height=40, 
                                       bg='#212529', highlightthickness=0)
-        self.refresh_canvas.create_rounded_rect(0, 0, 200, 50, 10, fill='#eb5e28')
+        self.refresh_canvas.pack(side="left", padx=10)
+        self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#eb5e28')
         self.refresh_label = tk.Label(self.refresh_canvas, text="Refresh Plan", 
-                                    font=("Helvetica", 14, "bold"), bg='#eb5e28', fg='white')
+                                    font=("Helvetica", 12, "bold"), bg='#eb5e28', fg='white')
         self.refresh_label.place(relx=0.5, rely=0.5, anchor="center")
+        
+        # Bind both canvas and label for better click handling
         self.refresh_canvas.bind("<Button-1>", lambda e: self.refresh_plan(self.responses))
         self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan(self.responses))
+        
+        # Add hover effect for refresh button
+        def on_refresh_enter(e):
+            self.refresh_canvas.delete("all")
+            self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#d44e1e')
+            self.refresh_label.configure(bg='#d44e1e')
+        
+        def on_refresh_leave(e):
+            self.refresh_canvas.delete("all")
+            self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#eb5e28')
+            self.refresh_label.configure(bg='#eb5e28')
+        
+        self.refresh_canvas.bind("<Enter>", on_refresh_enter)
+        self.refresh_label.bind("<Enter>", on_refresh_enter)
+        self.refresh_canvas.bind("<Leave>", on_refresh_leave)
+        self.refresh_label.bind("<Leave>", on_refresh_leave)
 
         # Create new plan button
-        self.new_plan_canvas = tk.Canvas(self.button_container, width=200, height=50, 
+        self.new_plan_canvas = tk.Canvas(button_frame, width=150, height=40, 
                                        bg='#212529', highlightthickness=0)
-        self.new_plan_canvas.create_rounded_rect(0, 0, 200, 50, 10, fill='#eb5e28')
+        self.new_plan_canvas.pack(side="left", padx=10)
+        self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#eb5e28')
         self.new_plan_label = tk.Label(self.new_plan_canvas, text="New Plan", 
-                                     font=("Helvetica", 14, "bold"), bg='#eb5e28', fg='white')
+                                     font=("Helvetica", 12, "bold"), bg='#eb5e28', fg='white')
         self.new_plan_label.place(relx=0.5, rely=0.5, anchor="center")
+        
+        # Bind both canvas and label for better click handling
         self.new_plan_canvas.bind("<Button-1>", lambda e: self.start_new_plan())
         self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
-
-        # Initial layout
-        self.update_button_layout()
-
-    def update_button_layout(self):
-        """Update the layout of the buttons based on the window width."""
-        width = self.winfo_width()
         
-        # Clear previous packing
-        for widget in self.button_container.winfo_children():
-            widget.pack_forget()
-
-        if width <= 500:
-            # Stack buttons vertically
-            self.refresh_canvas.pack(side="top", fill="x", pady=(0, 5))
-            self.new_plan_canvas.pack(side="top", fill="x")
-        else:
-            # Pack buttons side by side
-            self.refresh_canvas.pack(side="left", padx=10)
-            self.new_plan_canvas.pack(side="left", padx=10)
+        # Add hover effect for new plan button
+        def on_new_plan_enter(e):
+            self.new_plan_canvas.delete("all")
+            self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#d44e1e')
+            self.new_plan_label.configure(bg='#d44e1e')
+        
+        def on_new_plan_leave(e):
+            self.new_plan_canvas.delete("all")
+            self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8, fill='#eb5e28')
+            self.new_plan_label.configure(bg='#eb5e28')
+        
+        self.new_plan_canvas.bind("<Enter>", on_new_plan_enter)
+        self.new_plan_label.bind("<Enter>", on_new_plan_enter)
+        self.new_plan_canvas.bind("<Leave>", on_new_plan_leave)
+        self.new_plan_label.bind("<Leave>", on_new_plan_leave)
 
     def refresh_plan(self, responses):
         """Generate a new workout plan with the same preferences"""
