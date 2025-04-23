@@ -996,7 +996,7 @@ class WorkoutPlanPage(tk.Frame):
         
         # Create a text widget for the workout plan
         self.plan_text = tk.Text(self.plan_container, wrap=tk.WORD, bg='#212529', fg='white',
-                               font=("Helvetica", 14), padx=10, pady=10)
+                               font=("Helvetica", 14), padx=10, pady=10, cursor="arrow")
         self.plan_text.pack(fill="both", expand=True)
         
         # Add scrollbar
@@ -1030,6 +1030,9 @@ class WorkoutPlanPage(tk.Frame):
             plan = self.generate_workout_plan(responses)
             responses['plan_text'] = plan
         
+        # Store exercise URLs
+        self.exercise_urls = {}
+        
         # Process and insert the plan with formatting
         lines = plan.split('\n')
         for line in lines:
@@ -1051,17 +1054,11 @@ class WorkoutPlanPage(tk.Frame):
                 exercise_name = line[line.find('[')+1:line.find(']')]
                 url = line[line.find('(')+1:line.find(')')]
                 
-                # Insert the exercise name as a clickable link
-                start_index = self.plan_text.index("end-1c")
-                self.plan_text.insert("end", exercise_name, "exercise_link")
-                end_index = self.plan_text.index("end-1c")
-                
-                # Bind the click event to the specific text range
-                self.plan_text.tag_bind("exercise_link", "<Button-1>", 
-                                      lambda e, url=url: self.open_url(url))
-                
-                # Add a newline after the link
-                self.plan_text.insert("end", "\n")
+                # Store the URL for this line
+                line_start = self.plan_text.index("end-1c")
+                self.plan_text.insert("end", exercise_name + "\n", "exercise_link")
+                line_end = self.plan_text.index("end-1c")
+                self.exercise_urls[(line_start, line_end)] = url
             elif line.startswith('-'):
                 # Bullet point
                 bullet_text = line.lstrip('-').strip()
@@ -1089,6 +1086,20 @@ class WorkoutPlanPage(tk.Frame):
                     self.plan_text.insert("end", "\n")
                 else:
                     self.plan_text.insert("end", line + "\n", "normal")
+        
+        # Add click handler for the entire text widget
+        def on_click(event):
+            # Get the clicked position
+            index = self.plan_text.index(f"@{event.x},{event.y}")
+            
+            # Check if the click was on an exercise line
+            for (start, end), url in self.exercise_urls.items():
+                if self.plan_text.compare(start, "<=", index) and self.plan_text.compare(index, "<=", end):
+                    self.open_url(url)
+                    break
+        
+        # Bind the click event
+        self.plan_text.bind("<Button-1>", on_click)
         
         # Make it read-only
         self.plan_text.config(state="disabled")
