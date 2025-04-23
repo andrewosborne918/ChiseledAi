@@ -958,6 +958,14 @@ class WorkoutPlanPage(tk.Frame):
             # Display saved plan immediately
             self.display_workout_plan(responses, is_saved_plan=True)
     
+    def start_new_plan(self):
+        """Start a new workout plan by showing the main form"""
+        # Destroy the current workout plan page
+        self.destroy()
+        
+        # Show the main form
+        self.app.show_main_form()
+    
     def create_rounded_rect(self, canvas, x1, y1, x2, y2, radius, **kwargs):
         """Create a rounded rectangle on the canvas"""
         points = [
