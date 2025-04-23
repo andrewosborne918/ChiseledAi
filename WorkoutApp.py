@@ -856,7 +856,7 @@ class InjuryRestrictions(tk.Frame):
         # Create radio buttons with custom styling
         style = ttk.Style()
         style.configure("Custom.TRadiobutton",
-                      background='',
+                      background='black',
                       foreground='white',
                       font=("Helvetica", 14))
         
