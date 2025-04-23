@@ -1386,17 +1386,17 @@ class ExerciseInstructionPopup(tk.Toplevel):
         
         # Add exercise name as header
         header = tk.Label(main_container, text=exercise_name,
-                         font=("Helvetica", 18, "bold"),
-                         bg='#212529', fg='#eb5e28')
+                         font=("Impact", 24), bg='#212529', fg='#eb5e28')
         header.pack(pady=(0, 20))
-        
-        # Create text widget for instructions
+
+        # Create text frame
         text_frame = tk.Frame(main_container, bg='#212529')
         text_frame.pack(fill="both", expand=True)
         
+        # Create text widget for instructions
         self.text_widget = tk.Text(text_frame, wrap=tk.WORD,
                                  bg='#212529', fg='white',
-                                 font=("Helvetica", 12),
+                                 font=("Helvetica", 14),
                                  padx=10, pady=10,
                                  highlightthickness=0,
                                  borderwidth=0)
@@ -1407,21 +1407,84 @@ class ExerciseInstructionPopup(tk.Toplevel):
                                 command=self.text_widget.yview)
         scrollbar.pack(side="right", fill="y")
         self.text_widget.configure(yscrollcommand=scrollbar.set)
-        
-        # Insert instructions
-        self.text_widget.insert("1.0", instructions)
+
+        # Configure text tags for formatting
+        self.text_widget.tag_configure("section_header", 
+                                     font=("Helvetica", 16, "bold"), 
+                                     foreground="#eb5e28")
+        self.text_widget.tag_configure("bullet", 
+                                     lmargin1=20, 
+                                     lmargin2=40)
+        self.text_widget.tag_configure("normal", 
+                                     font=("Helvetica", 14))
+
+        # Process and insert the instructions with formatting
+        sections = instructions.split('\n')
+        for section in sections:
+            section = section.strip()
+            if not section:
+                self.text_widget.insert("end", "\n")
+                continue
+
+            if section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')):
+                # Section headers
+                parts = section.split(':', 1)
+                if len(parts) == 2:
+                    self.text_widget.insert("end", f"{parts[0]}:\n", "section_header")
+                    if parts[1].strip():
+                        self.text_widget.insert("end", f"{parts[1].strip()}\n", "normal")
+                else:
+                    self.text_widget.insert("end", f"{section}\n", "section_header")
+            elif section.startswith('-'):
+                # Bullet points
+                self.text_widget.insert("end", "• " + section[1:].strip() + "\n", "bullet")
+            else:
+                # Normal text
+                self.text_widget.insert("end", section + "\n", "normal")
+
+        # Make text widget read-only
         self.text_widget.config(state="disabled")
         
-        # Add close button
-        close_button = tk.Button(main_container, text="Close",
-                               command=self.destroy,
-                               bg='#eb5e28', fg='white',
-                               font=("Helvetica", 12, "bold"),
-                               padx=20, pady=5,
-                               relief="flat",
-                               activebackground='#d44e1e',
-                               activeforeground='white')
-        close_button.pack(pady=(20, 0))
+        # Create button frame
+        button_frame = tk.Frame(main_container, bg='#212529', pady=20)
+        button_frame.pack()
+
+        # Create canvas for the rounded button
+        button_canvas = tk.Canvas(button_frame, width=150, height=40,
+                                bg='#212529', highlightthickness=0)
+        button_canvas.pack()
+
+        # Create rounded rectangle button
+        button_canvas.create_rounded_rect(0, 0, 150, 40, 8,
+                                        fill='#eb5e28', outline='#eb5e28')
+
+        # Add button label
+        button_label = tk.Label(button_canvas, text="Close",
+                              font=("Helvetica", 12, "bold"),
+                              bg='#eb5e28', fg='white',
+                              cursor="hand2")
+        button_label.place(relx=0.5, rely=0.5, anchor='center')
+
+        # Add hover effect
+        def on_enter(e):
+            button_canvas.delete("all")
+            button_canvas.create_rounded_rect(0, 0, 150, 40, 8,
+                                           fill='#d44e1e', outline='#d44e1e')
+            button_label.configure(bg='#d44e1e')
+
+        def on_leave(e):
+            button_canvas.delete("all")
+            button_canvas.create_rounded_rect(0, 0, 150, 40, 8,
+                                           fill='#eb5e28', outline='#eb5e28')
+            button_label.configure(bg='#eb5e28')
+
+        # Bind events
+        button_canvas.bind("<Button-1>", lambda e: self.destroy())
+        button_label.bind("<Button-1>", lambda e: self.destroy())
+        button_canvas.bind("<Enter>", on_enter)
+        button_label.bind("<Enter>", on_enter)
+        button_canvas.bind("<Leave>", on_leave)
+        button_label.bind("<Leave>", on_leave)
         
         # Center the window on the screen
         self.update_idletasks()
