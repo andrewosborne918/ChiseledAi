@@ -1020,7 +1020,7 @@ class WorkoutPlanPage(tk.Frame):
         content_frame = tk.Frame(self.plan_container, bg='#212529')
         content_frame.pack(fill="both", expand=True)
         
-        # Create a container for the text area with fixed height
+        # Create a container for the text area that will expand
         text_container = tk.Frame(content_frame, bg='#212529')
         text_container.pack(fill="both", expand=True, pady=(0, 10))
         
@@ -1138,7 +1138,7 @@ class WorkoutPlanPage(tk.Frame):
         # Add some spacing at the end
         self.plan_text.insert("end", "\n\n")
         
-        # Create a fixed-height frame for the buttons
+        # Create a fixed-height frame for the buttons at the bottom
         button_frame = tk.Frame(content_frame, bg='#212529', height=70)
         button_frame.pack(side="bottom", fill="x", expand=False)
         
