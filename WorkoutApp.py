@@ -1012,8 +1012,12 @@ class WorkoutPlanPage(tk.Frame):
         if hasattr(self, 'button_container'):
             self.button_container.destroy()
         
+        # Create a main content frame that will hold both the text and buttons
+        content_frame = tk.Frame(self.plan_container, bg='#212529')
+        content_frame.pack(fill="both", expand=True)
+        
         # Create a frame to hold the text widget and scrollbar
-        text_frame = tk.Frame(self.plan_container, bg='#212529')
+        text_frame = tk.Frame(content_frame, bg='#212529')
         text_frame.pack(fill="both", expand=True)
         
         # Create a text widget for the workout plan
@@ -1127,8 +1131,8 @@ class WorkoutPlanPage(tk.Frame):
         self.plan_text.insert("end", "\n\n")
         
         # Create button container
-        self.button_container = tk.Frame(self.main_container, bg='#212529', padx=20, pady=10)
-        self.button_container.pack(side="bottom", pady=20, fill="x", expand=False)  # Changed expand to False
+        self.button_container = tk.Frame(content_frame, bg='#212529', padx=20, pady=10)
+        self.button_container.pack(side="bottom", pady=20, fill="x")
         
         # Create buttons
         width = self.app.winfo_width()
