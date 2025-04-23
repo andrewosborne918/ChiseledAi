@@ -490,24 +490,8 @@ class WorkoutApp(tk.Tk):
             self.submit_canvas.pack(fill='x')
 
             # Draw rounded rectangle
-            def create_rounded_rect(canvas, x1, y1, x2, y2, radius, **kwargs):
-                points = [
-                    x1 + radius, y1,
-                    x2 - radius, y1,
-                    x2, y1 + radius,
-                    x2, y2 - radius,
-                    x2 - radius, y2,
-                    x1, y2,
-                    x1, y2 - radius,
-                    x1, y1 + radius,
-                    x1, y1,
-                ]
-                return canvas.create_polygon(points, smooth=True, **kwargs)
-
-            # Create the rounded rectangle background
-            radius = 10 if width < 450 else 15
-            create_rounded_rect(self.submit_canvas, 0, 0, button_width, button_height, radius,
-                                fill='#eb5e28', outline='#eb5e28')
+            self.submit_canvas.create_rounded_rect(0, 0, button_width, button_height, 8,
+                                                fill='#eb5e28', outline='#eb5e28')
 
             # Create the label on top of the canvas
             self.submit_label = tk.Label(
@@ -519,7 +503,29 @@ class WorkoutApp(tk.Tk):
                 cursor="hand2"
             )
             self.submit_label.place(relx=0.5, rely=0.5, anchor='center')
+
+            # Bind click events to both canvas and label
+            self.submit_canvas.bind("<Button-1>", lambda e: self.collect_responses())
             self.submit_label.bind("<Button-1>", lambda e: self.collect_responses())
+
+            # Add hover effect
+            def on_enter(e):
+                self.submit_canvas.delete("all")
+                self.submit_canvas.create_rounded_rect(0, 0, button_width, button_height, 8,
+                                                    fill='#d44e1e', outline='#d44e1e')
+                self.submit_label.configure(bg='#d44e1e')
+
+            def on_leave(e):
+                self.submit_canvas.delete("all")
+                self.submit_canvas.create_rounded_rect(0, 0, button_width, button_height, 8,
+                                                    fill='#eb5e28', outline='#eb5e28')
+                self.submit_label.configure(bg='#eb5e28')
+
+            # Bind hover events to both canvas and label
+            self.submit_canvas.bind("<Enter>", on_enter)
+            self.submit_label.bind("<Enter>", on_enter)
+            self.submit_canvas.bind("<Leave>", on_leave)
+            self.submit_label.bind("<Leave>", on_leave)
 
     def show_next_question(self, event=None):
         if self.current_section_index < len(self.sections) - 1:
