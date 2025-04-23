@@ -1007,6 +1007,7 @@ class WorkoutPlanPage(tk.Frame):
         self.display_workout_plan(responses, is_saved_plan=True)
 
     def display_workout_plan(self, responses, is_saved_plan=False):
+        """Display the workout plan with proper formatting and styling."""
         # Clear any existing plan display and buttons
         for widget in self.plan_container.winfo_children():
             widget.destroy()
@@ -1020,7 +1021,7 @@ class WorkoutPlanPage(tk.Frame):
         self.button_container.pack(fill="x", pady=(0, 20))
 
         # Create buttons
-        self.create_buttons()  # Call a method to create buttons
+        self.create_buttons()
 
         # Create a container for the text area that will expand
         text_container = tk.Frame(content_frame, bg='#212529')
@@ -1034,8 +1035,7 @@ class WorkoutPlanPage(tk.Frame):
         self.plan_text = tk.Text(text_frame, wrap=tk.WORD, bg='#212529', fg='white',
                                  font=("Helvetica", 14), padx=10, pady=10,
                                  spacing1=5, spacing2=2, spacing3=5,
-                                 highlightthickness=0,  # Remove highlight border
-                                 borderwidth=0)  # Remove border
+                                 highlightthickness=0, borderwidth=0)
         self.plan_text.pack(side="left", fill="both", expand=True)
 
         # Add scrollbar
@@ -1047,11 +1047,10 @@ class WorkoutPlanPage(tk.Frame):
         self.plan_text.tag_configure("header", font=("Helvetica", 18, "bold"), foreground="#eb5e28", justify="left")
         self.plan_text.tag_configure("subheader", font=("Helvetica", 16, "bold"), foreground="#eb5e28", justify="left")
         self.plan_text.tag_configure("h3", font=("Helvetica", 15, "bold"), foreground="#eb5e28", justify="left")
-        self.plan_text.tag_configure("exercise_link", font=("Helvetica", 14, "bold"), foreground="#4dabf7", underline=1,
-                                     justify="left")
-        self.plan_text.tag_configure("bullet", lmargin1=20, lmargin2=40, justify="left")
-        self.plan_text.tag_configure("normal", font=("Helvetica", 14), justify="left")
-        self.plan_text.tag_configure("timestamp", font=("Helvetica", 12), foreground="#eb5e28", justify="left")
+        self.plan_text.tag_configure("exercise_link", font=("Helvetica", 14, "bold"), foreground="#4dabf7", underline=1)
+        self.plan_text.tag_configure("bullet", lmargin1=20, lmargin2=40)
+        self.plan_text.tag_configure("normal", font=("Helvetica", 14))
+        self.plan_text.tag_configure("timestamp", font=("Helvetica", 12), foreground="#eb5e28")
 
         # Add timestamp at the top
         if is_saved_plan and 'timestamp' in responses:
@@ -1070,40 +1069,73 @@ class WorkoutPlanPage(tk.Frame):
             plan = self.generate_workout_plan(responses)
             responses['plan_text'] = plan
 
-        # Process the plan to add video links
+        # Process and insert the plan with formatting
         lines = plan.split('\n')
-        processed_lines = []
-        in_exercise_section = False
-        
         for line in lines:
             line = line.strip()
-            
-            # Skip empty lines
             if not line:
-                processed_lines.append(line)
+                self.plan_text.insert("end", "\n")
                 continue
-            
-            # Check if we're in a workout section
-            if line.startswith('##'):
-                in_exercise_section = "Warm-up" in line or "Main Workout" in line or "Cool-down" in line
-                processed_lines.append(line)
-                continue
-            
-            # Process potential exercise names
-            if in_exercise_section and not any(line.startswith(x) for x in ['#', '-', '[', '•']) and ':' not in line and len(line.split()) <= 4:
-                # This is likely an exercise name
-                video_url, source = get_youtube_video(line)
-                if video_url:
-                    processed_lines.append(f"[{line}]({video_url})")
-                    logging.info(f"Added video link for {line}: {video_url}")
-                else:
-                    processed_lines.append(line)
-                    logging.warning(f"No video found for {line}")
-            else:
-                # Not an exercise name, add as is
-                processed_lines.append(line)
 
-        return '\n'.join(processed_lines)
+            if line.startswith('#') and not line.startswith('##'):
+                # Header
+                header_text = line.lstrip('#').strip()
+                self.plan_text.insert("end", header_text + "\n", "header")
+            elif line.startswith('##'):
+                # Subheader
+                subheader_text = line.lstrip('#').strip()
+                self.plan_text.insert("end", subheader_text + "\n", "subheader")
+            elif line.startswith('[') and '](' in line and ')' in line:
+                # Exercise link
+                exercise_name = line[line.find('[') + 1:line.find(']')]
+                url = line[line.find('(') + 1:line.find(')')]
+
+                # Insert the exercise name as a clickable link
+                self.plan_text.insert("end", exercise_name + "\n", "exercise_link")
+
+                # Create a click handler for this specific link
+                def make_click_handler(url):
+                    return lambda event: self.open_url(url)
+
+                # Bind the click event to the specific text range
+                tag_name = f"link_{exercise_name}"
+                self.plan_text.tag_add(tag_name, "end-2c linestart", "end-1c")
+                self.plan_text.tag_bind(tag_name, "<Button-1>", make_click_handler(url))
+                self.plan_text.tag_bind(tag_name, "<Enter>", lambda e: self.plan_text.config(cursor="hand2"))
+                self.plan_text.tag_bind(tag_name, "<Leave>", lambda e: self.plan_text.config(cursor=""))
+            elif line.startswith('-'):
+                # Bullet point
+                bullet_text = line.lstrip('-').strip()
+                # Check for bold text within bullet points
+                if '**' in bullet_text:
+                    parts = bullet_text.split('**')
+                    self.plan_text.insert("end", "• ", "bullet")
+                    for i, part in enumerate(parts):
+                        if i % 2 == 0:
+                            self.plan_text.insert("end", part, "normal")
+                        else:
+                            self.plan_text.insert("end", part, "h3")
+                    self.plan_text.insert("end", "\n")
+                else:
+                    self.plan_text.insert("end", "• " + bullet_text + "\n", "bullet")
+            else:
+                # Normal text
+                if '**' in line:
+                    parts = line.split('**')
+                    for i, part in enumerate(parts):
+                        if i % 2 == 0:
+                            self.plan_text.insert("end", part, "normal")
+                        else:
+                            self.plan_text.insert("end", part, "h3")
+                    self.plan_text.insert("end", "\n")
+                else:
+                    self.plan_text.insert("end", line + "\n", "normal")
+
+        # Make it read-only
+        self.plan_text.config(state="disabled")
+
+        # Force update of all widgets
+        self.update_idletasks()
 
     def create_buttons(self):
         """Create the refresh and new plan buttons."""
