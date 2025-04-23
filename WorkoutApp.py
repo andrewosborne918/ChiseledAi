@@ -1052,11 +1052,16 @@ class WorkoutPlanPage(tk.Frame):
                 url = line[line.find('(')+1:line.find(')')]
                 
                 # Insert the exercise name as a clickable link
+                start_index = self.plan_text.index("end-1c")
                 self.plan_text.insert("end", exercise_name, "exercise_link")
-                self.plan_text.insert("end", "\n")
+                end_index = self.plan_text.index("end-1c")
                 
-                # Store the URL in the tag
-                self.plan_text.tag_bind("exercise_link", "<Button-1>", lambda e, url=url: self.open_url(url))
+                # Bind the click event to the specific text range
+                self.plan_text.tag_bind("exercise_link", "<Button-1>", 
+                                      lambda e, url=url: self.open_url(url))
+                
+                # Add a newline after the link
+                self.plan_text.insert("end", "\n")
             elif line.startswith('-'):
                 # Bullet point
                 bullet_text = line.lstrip('-').strip()
