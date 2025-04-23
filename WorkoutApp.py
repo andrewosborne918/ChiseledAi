@@ -39,6 +39,7 @@ if not YOUTUBE_API_KEY:
 model = genai.GenerativeModel('gemini-1.5-flash-latest')
 youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
 
+
 class ExerciseDatabase:
     def __init__(self, excel_path: str):
         """Initialize the exercise database from an Excel file"""
@@ -93,9 +94,9 @@ class ExerciseDatabase:
                 filtered_df = filtered_df[filtered_df[key] == value]
         return filtered_df.sample(min(count, len(filtered_df))).to_dict('records')
 
-    def get_exercises_by_filters(self, muscle_group: Optional[str] = None, 
-                               difficulty: Optional[str] = None,
-                               equipment: Optional[str] = None) -> List[Dict]:
+    def get_exercises_by_filters(self, muscle_group: Optional[str] = None,
+                                 difficulty: Optional[str] = None,
+                                 equipment: Optional[str] = None) -> List[Dict]:
         """Get exercises matching multiple criteria"""
         filtered_df = self.df
         if muscle_group:
@@ -106,12 +107,14 @@ class ExerciseDatabase:
             filtered_df = filtered_df[filtered_df['equipment'] == equipment]
         return filtered_df.to_dict('records')
 
+
 # Initialize the exercise database
 try:
     EXERCISE_DB = ExerciseDatabase('Exercise_Database.xlsx')  # Updated to match the correct filename
 except Exception as e:
     logging.error(f"Failed to initialize exercise database: {e}")
     EXERCISE_DB = None
+
 
 def get_youtube_video(exercise_name):
     """Return a YouTube search URL for the exercise"""
@@ -123,7 +126,7 @@ def get_youtube_video(exercise_name):
                 return exercise['video_url'], "Exercise Database"
             else:
                 logging.info(f"No video URL found in database for {exercise_name}")
-        
+
         # Fallback to YouTube search if no database match
         search_query = f"{exercise_name} exercise tutorial proper form"
         search_url = f"https://www.youtube.com/results?search_query={search_query.replace(' ', '+')}"
@@ -133,17 +136,18 @@ def get_youtube_video(exercise_name):
         logging.error(f"Error getting video URL for {exercise_name}: {e}")
         return None, None
 
+
 def git_sync(commit_message="Auto-sync: Updated workout plan"):
     """Automatically commit and push changes to GitHub"""
     try:
         # Stage all changes
         subprocess.run(['git', 'add', '.'], check=True)
         logging.info("Staged changes for commit")
-        
+
         # Commit changes
         subprocess.run(['git', 'commit', '-m', commit_message], check=True)
         logging.info(f"Committed changes with message: {commit_message}")
-        
+
         # Push changes
         subprocess.run(['git', 'push'], check=True)
         logging.info("Successfully pushed changes to GitHub")
@@ -155,38 +159,39 @@ def git_sync(commit_message="Auto-sync: Updated workout plan"):
         logging.error(f"Unexpected error during Git sync: {e}")
         return False
 
+
 class WorkoutApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Chiseled AI - Workout Planner")
         self.geometry("800x900")
-        
+
         # Set minimum window size (similar to a phone screen)
         self.minsize(360, 640)
-        
+
         # Set background color to dark gray
         self.configure(bg='#212529')
-        
+
         # Bind window resize event
         self.bind('<Configure>', self.on_window_resize)
-        
+
         # Get the appropriate data directory based on platform
         self.data_dir = self.get_data_directory()
         os.makedirs(self.data_dir, exist_ok=True)
-        
+
         # Create loading screen
         self.loading_frame = tk.Frame(self, bg='#212529')
         self.loading_frame.pack(fill="both", expand=True)
-        
+
         # Create a container for vertical distribution
         self.loading_container = tk.Frame(self.loading_frame, bg='#212529', padx=40)
         self.loading_container.pack(expand=True, fill="both", pady=50)
-        
+
         # Add title to loading screen
-        self.title_label = tk.Label(self.loading_container, text="CHISELED AI", 
-                             font=("Impact", 80), bg='#212529', fg='#eb5e28')
+        self.title_label = tk.Label(self.loading_container, text="CHISELED AI",
+                                    font=("Impact", 80), bg='#212529', fg='#eb5e28')
         self.title_label.pack(pady=20)
-        
+
         # Load and display logo
         try:
             logo_image = Image.open("Images/Chiseled_logo.png")
@@ -197,21 +202,21 @@ class WorkoutApp(tk.Tk):
             self.logo_label.pack(pady=20)
         except Exception as e:
             print(f"Error loading logo: {e}")
-            self.subtitle_label = tk.Label(self.loading_container, text="CHISELED AI LOGO", 
-                                    font=("Helvetica", 16), bg='#212529', fg='white')
+            self.subtitle_label = tk.Label(self.loading_container, text="CHISELED AI LOGO",
+                                           font=("Helvetica", 16), bg='#212529', fg='white')
             self.subtitle_label.pack(pady=20)
-        
+
         # Add tagline
-        self.tagline_label = tk.Label(self.loading_container, text="YOUR PERSONAL WORKOUT PLANNER", 
-                               font=("Helvetica", 24), bg='#212529', fg='white')
+        self.tagline_label = tk.Label(self.loading_container, text="YOUR PERSONAL WORKOUT PLANNER",
+                                      font=("Helvetica", 24), bg='#212529', fg='white')
         self.tagline_label.pack(pady=20)
-        
+
         # Check for saved workout plan
         self.saved_plan = self.load_saved_plan()
-        
+
         # Schedule the main form or saved plan to appear after 3 seconds
         self.after(3000, self.show_initial_screen)
-    
+
     def get_data_directory(self):
         """Get the appropriate data directory based on the platform."""
         if platform.system() == 'Android':
@@ -223,7 +228,7 @@ class WorkoutApp(tk.Tk):
         else:
             # For other platforms (Windows, Linux, etc.)
             return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
-    
+
     def load_saved_plan(self):
         try:
             plan_path = os.path.join(self.data_dir, 'workout_plan.json')
@@ -233,16 +238,16 @@ class WorkoutApp(tk.Tk):
         except Exception as e:
             print(f"Error loading saved plan: {e}")
         return None
-    
+
     def save_workout_plan(self, plan):
         try:
             plan_path = os.path.join(self.data_dir, 'workout_plan.json')
             with open(plan_path, 'w') as f:
                 json.dump(plan, f)
-            
+
             # Auto-sync after saving workout plan
             git_sync("Auto-sync: Saved new workout plan")
-            
+
         except Exception as e:
             print(f"Error saving workout plan: {e}")
             # Try alternative save method if the first one fails
@@ -251,17 +256,17 @@ class WorkoutApp(tk.Tk):
                 alt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'workout_plan.json')
                 with open(alt_path, 'w') as f:
                     json.dump(plan, f)
-                
+
                 # Auto-sync after alternative save
                 git_sync("Auto-sync: Saved workout plan to alternative location")
-                
+
             except Exception as e2:
                 print(f"Alternative save also failed: {e2}")
-    
+
     def show_initial_screen(self):
         # Remove loading screen
         self.loading_frame.pack_forget()
-        
+
         if self.saved_plan:
             # Show saved workout plan
             self.workout_plan_page = WorkoutPlanPage(self, self, self.saved_plan)
@@ -271,12 +276,12 @@ class WorkoutApp(tk.Tk):
         else:
             # Show main form
             self.show_main_form()
-    
+
     def on_window_resize(self, event):
         if event.widget == self:
             width = self.winfo_width()
             print(f"Window width: {width}")  # Debug logging
-            
+
             if width < 450:
                 print("Applying small screen font sizes")  # Debug logging
                 # Small screen font sizes
@@ -290,7 +295,7 @@ class WorkoutApp(tk.Tk):
                     self.main_title_label.config(font=("Impact", 30))
                 if hasattr(self, 'main_subtitle_label'):
                     self.main_subtitle_label.config(font=("Helvetica", 12))
-                
+
                 # Update loading screen image size
                 if hasattr(self, 'logo_image'):
                     max_size = (200, 200)  # Smaller size for small screens
@@ -298,7 +303,7 @@ class WorkoutApp(tk.Tk):
                     self.logo_photo = ImageTk.PhotoImage(self.logo_image)
                     if hasattr(self, 'logo_label'):
                         self.logo_label.config(image=self.logo_photo)
-                
+
                 # Update question fonts
                 if hasattr(self, 'sections'):
                     print("Updating question fonts to small size")  # Debug logging
@@ -307,7 +312,7 @@ class WorkoutApp(tk.Tk):
                         if hasattr(section, 'question_label'):
                             section.question_label.config(font=("Helvetica", 12, "bold"), wraplength=300)
                             print(f"Updated question label in {section.__class__.__name__}")  # Debug logging
-                        
+
                         # Update all labels in the section
                         for widget in section.winfo_children():
                             if isinstance(widget, tk.Label):
@@ -321,7 +326,7 @@ class WorkoutApp(tk.Tk):
                                         child.config(font=("Helvetica", 12), wraplength=300)
                                     elif isinstance(child, tk.Checkbutton) or isinstance(child, tk.Radiobutton):
                                         child.config(font=("Helvetica", 10), wraplength=300)
-                
+
                 # Auto-sync after significant UI changes
                 git_sync("Auto-sync: Updated UI for small screen")
             else:
@@ -337,7 +342,7 @@ class WorkoutApp(tk.Tk):
                     self.main_title_label.config(font=("Impact", 50))
                 if hasattr(self, 'main_subtitle_label'):
                     self.main_subtitle_label.config(font=("Helvetica", 14))
-                
+
                 # Update loading screen image size
                 if hasattr(self, 'logo_image'):
                     max_size = (400, 400)  # Normal size for larger screens
@@ -345,7 +350,7 @@ class WorkoutApp(tk.Tk):
                     self.logo_photo = ImageTk.PhotoImage(self.logo_image)
                     if hasattr(self, 'logo_label'):
                         self.logo_label.config(image=self.logo_photo)
-                
+
                 # Update question fonts
                 if hasattr(self, 'sections'):
                     print("Updating question fonts to normal size")  # Debug logging
@@ -354,7 +359,7 @@ class WorkoutApp(tk.Tk):
                         if hasattr(section, 'question_label'):
                             section.question_label.config(font=("Helvetica", 16, "bold"), wraplength=400)
                             print(f"Updated question label in {section.__class__.__name__}")  # Debug logging
-                        
+
                         # Update all labels in the section
                         for widget in section.winfo_children():
                             if isinstance(widget, tk.Label):
@@ -368,31 +373,31 @@ class WorkoutApp(tk.Tk):
                                         child.config(font=("Helvetica", 16), wraplength=400)
                                     elif isinstance(child, tk.Checkbutton) or isinstance(child, tk.Radiobutton):
                                         child.config(font=("Helvetica", 12), wraplength=400)
-                
+
                 # Auto-sync after significant UI changes
                 git_sync("Auto-sync: Updated UI for normal screen")
-            
+
             # Force update of all widgets
             self.update_idletasks()
-    
+
     def show_main_form(self):
         # Remove loading screen
         self.loading_frame.pack_forget()
-        
+
         # Create main container
         self.main_container = tk.Frame(self, padx=40, pady=40, bg='#212529')
         self.main_container.pack(fill="both", expand=True)
-        
+
         # Create title frame
         self.title_frame = tk.Frame(self.main_container, bg='#212529', padx=10)
         self.title_frame.pack(fill="x", pady=(0, 20))
-        
-        self.main_title_label = tk.Label(self.title_frame, text="CHISELED AI", 
-                             font=("Impact", 50), bg='#212529', fg='#eb5e28', wraplength=300)
+
+        self.main_title_label = tk.Label(self.title_frame, text="CHISELED AI",
+                                         font=("Impact", 50), bg='#212529', fg='#eb5e28', wraplength=300)
         self.main_title_label.pack()
-        
-        self.main_subtitle_label = tk.Label(self.title_frame, text="YOUR PERSONAL WORKOUT PLANNER", 
-                                font=("Helvetica", 14), bg='#212529', fg='white', wraplength=300)
+
+        self.main_subtitle_label = tk.Label(self.title_frame, text="YOUR PERSONAL WORKOUT PLANNER",
+                                            font=("Helvetica", 14), bg='#212529', fg='white', wraplength=300)
         self.main_subtitle_label.pack()
 
         # Create question container
@@ -463,7 +468,7 @@ class WorkoutApp(tk.Tk):
 
         # Initialize current section index
         self.current_section_index = 0
-        
+
         # Show first question
         self.show_current_question()
 
@@ -471,11 +476,11 @@ class WorkoutApp(tk.Tk):
         # Hide all sections
         for section in self.sections:
             section.pack_forget()
-        
+
         # Show current section
         current_section = self.sections[self.current_section_index]
         current_section.pack(fill="both", expand=True, padx=5, pady=10)
-        
+
         # Update question numbering based on the current path
         if self.focus_var.get() == "Target muscle group":
             self.goal_section.update_numbering(3)
@@ -493,56 +498,56 @@ class WorkoutApp(tk.Tk):
             self.location_section.update_numbering(6)
             self.injury_section.update_numbering(7)
             self.style_section.update_numbering(8)
-        
+
         # Update navigation buttons
         self.back_button.pack_forget()
         self.next_button.pack_forget()
         if hasattr(self, 'submit_frame'):
             self.submit_frame.pack_forget()
-        
+
         if self.current_section_index > 0:
             self.back_button.pack(side="left", padx=20)
-        
+
         if self.current_section_index < len(self.sections) - 1:
             self.next_button.pack(side="right", padx=20)
         else:
             # Show submit button on last question
             self.submit_frame = tk.Frame(self.nav_frame, bg='#212529', padx=20, pady=10)
             self.submit_frame.pack(side="right", padx=20)
-            
+
             # Create a canvas for the rounded button
             width = self.winfo_width()
             button_width = 150 if width < 450 else 200
             button_height = 40 if width < 450 else 50
             font_size = 12 if width < 450 else 14
-            
-            self.submit_canvas = tk.Canvas(self.submit_frame, bg='#212529', highlightthickness=0, 
-                                         height=button_height, width=button_width)
+
+            self.submit_canvas = tk.Canvas(self.submit_frame, bg='#212529', highlightthickness=0,
+                                           height=button_height, width=button_width)
             self.submit_canvas.pack(fill='x')
-            
+
             # Draw rounded rectangle
             def create_rounded_rect(canvas, x1, y1, x2, y2, radius, **kwargs):
                 points = [
-                    x1+radius, y1,
-                    x2-radius, y1,
+                    x1 + radius, y1,
+                    x2 - radius, y1,
                     x2, y1,
-                    x2, y1+radius,
-                    x2, y2-radius,
+                    x2, y1 + radius,
+                    x2, y2 - radius,
                     x2, y2,
-                    x2-radius, y2,
-                    x1+radius, y2,
+                    x2 - radius, y2,
+                    x1 + radius, y2,
                     x1, y2,
-                    x1, y2-radius,
-                    x1, y1+radius,
+                    x1, y2 - radius,
+                    x1, y1 + radius,
                     x1, y1,
                 ]
                 return canvas.create_polygon(points, smooth=True, **kwargs)
-            
+
             # Create the rounded rectangle background
             radius = 10 if width < 450 else 15
-            create_rounded_rect(self.submit_canvas, 0, 0, button_width, button_height, radius, 
-                              fill='#eb5e28', outline='#eb5e28')
-            
+            create_rounded_rect(self.submit_canvas, 0, 0, button_width, button_height, radius,
+                                fill='#eb5e28', outline='#eb5e28')
+
             # Create the label on top of the canvas
             self.submit_label = tk.Label(
                 self.submit_canvas,
@@ -580,7 +585,8 @@ class WorkoutApp(tk.Tk):
     def collect_responses(self):
         responses = {
             "Workout Focus": self.focus_var.get(),
-            "Muscle Groups": [group for group, var in self.muscle_vars.items() if var.get()] if self.focus_var.get() == "Target muscle group" else None,
+            "Muscle Groups": [group for group, var in self.muscle_vars.items() if
+                              var.get()] if self.focus_var.get() == "Target muscle group" else None,
             "Goal": self.goal_var.get(),
             "Experience": self.experience_var.get(),
             "Equipment": self.equipment_section.collect_equipment_info(),
@@ -589,13 +595,13 @@ class WorkoutApp(tk.Tk):
             "Injuries": self.injury_section.collect_injury_info(),
             "Workout Style": self.style_var.get(),
         }
-        
+
         # Save the workout plan
         self.save_workout_plan(responses)
-        
+
         # Hide the main form
         self.main_container.pack_forget()
-        
+
         # Create and show the workout plan page
         self.workout_plan_page = WorkoutPlanPage(self, self, responses)
         self.workout_plan_page.pack(fill="both", expand=True)
@@ -621,67 +627,71 @@ class WorkoutApp(tk.Tk):
             self.refresh_canvas.pack(side="left", padx=10)
             self.new_plan_canvas.pack(side="left", padx=10)
 
+
 # Each question section as a class
 
 class WorkoutFocus(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
-        
+
         # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-        
-        tk.Label(self.center_frame, text="1. What kind of workout would you like to do?", 
+
+        tk.Label(self.center_frame, text="1. What kind of workout would you like to do?",
                  font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=500).pack(anchor="w", pady=5)
-        dropdown = ttk.Combobox(self.center_frame, textvariable=app.focus_var, 
-                              values=["Full body", "Target muscle group"])
+        dropdown = ttk.Combobox(self.center_frame, textvariable=app.focus_var,
+                                values=["Full body", "Target muscle group"])
         dropdown.pack(fill="x", pady=5)
         # Remove automatic advancement
         dropdown.bind("<<ComboboxSelected>>", lambda e: None)
         # Make entire dropdown clickable to show list
         dropdown.bind("<Button-1>", lambda e: dropdown.focus_set() or dropdown.event_generate('<Down>'))
 
+
 class MuscleGroup(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
         self.muscle_groups = ["Chest", "Back", "Legs", "Arms", "Shoulders", "Core", "Glutes"]
-        
+
         # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-        
-        tk.Label(self.center_frame, text="2. Which muscle groups?", 
+
+        tk.Label(self.center_frame, text="2. Which muscle groups?",
                  font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=5)
-        
+
         # Create a frame to hold the checkboxes
         self.checkbox_frame = tk.Frame(self.center_frame, bg='#212529')
         self.checkbox_frame.pack(fill="x", pady=5)
-        
+
         # Create checkboxes for each muscle group
         for group in self.muscle_groups:
             var = tk.BooleanVar()
             self.app.muscle_vars[group] = var
             tk.Checkbutton(self.checkbox_frame, text=group, variable=var,
-                          command=lambda: None, font=("Helvetica", 12),
-                          bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
-    
+                           command=lambda: None, font=("Helvetica", 12),
+                           bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
+
     def on_checkbox_change(self):
         # Check if at least one muscle group is selected
         if any(var.get() for var in self.app.muscle_vars.values()):
             self.app.show_next_question()
 
+
 class WorkoutGoal(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
-        
+
         # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-        
-        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300)
+
+        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white',
+                                       wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
         dropdown = ttk.Combobox(self.center_frame, textvariable=app.goal_var,
                                 values=["Build muscle", "Lose fat", "Increase endurance",
@@ -691,69 +701,74 @@ class WorkoutGoal(tk.Frame):
         dropdown.bind("<<ComboboxSelected>>", lambda e: None)
         # Make entire dropdown clickable to show list
         dropdown.bind("<Button-1>", lambda e: dropdown.focus_set() or dropdown.event_generate('<Down>'))
-    
+
     def update_numbering(self, number):
         self.question_label.config(text=f"{number}. What is your primary goal?")
+
 
 class ExperienceLevel(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
-        
+
         # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-        
-        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300)
+
+        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white',
+                                       wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
         for level in ["Beginner", "Intermediate", "Advanced"]:
             tk.Radiobutton(self.center_frame, text=level, variable=app.experience_var, value=level,
-                          command=lambda: None, font=("Helvetica", 12),
-                          bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
+                           command=lambda: None, font=("Helvetica", 12),
+                           bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
 
     def update_numbering(self, number):
         self.question_label.config(text=f"{number}. What is your fitness level?")
+
 
 class EquipmentSelection(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
-        
+
         # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-        
-        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300)
+
+        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white',
+                                       wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
-        equipment_list = ["Bodyweight only", "Dumbbells", "Barbells", "Resistance bands", "Kettlebells", "Machines", "Other"]
-        
+        equipment_list = ["Bodyweight only", "Dumbbells", "Barbells", "Resistance bands", "Kettlebells", "Machines",
+                          "Other"]
+
         # Create a frame for checkboxes
         self.checkbox_frame = tk.Frame(self.center_frame, bg='#212529')
         self.checkbox_frame.pack(fill="x", pady=5)
-        
+
         # Create checkboxes for each equipment type
         for eq in equipment_list:
             var = tk.BooleanVar()
             app.equipment_vars[eq] = var
             tk.Checkbutton(self.checkbox_frame, text=eq, variable=var,
-                          command=lambda eq=eq: self.on_checkbox_change(eq),
-                          font=("Helvetica", 12), bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
-        
+                           command=lambda eq=eq: self.on_checkbox_change(eq),
+                           font=("Helvetica", 12), bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
+
         # Create text entry frame (initially hidden)
         self.text_frame = tk.Frame(self.center_frame, bg='#212529')
-        self.text_label = tk.Label(self.text_frame, text="Please describe your other equipment:", 
-                                  font=("Helvetica", 12), bg='#212529', fg='white')
+        self.text_label = tk.Label(self.text_frame, text="Please describe your other equipment:",
+                                   font=("Helvetica", 12), bg='#212529', fg='white')
         self.text_label.pack(anchor="w", pady=(20, 5))
-        
+
         # Create text widget for multi-line input
         self.text_widget = tk.Text(self.text_frame, height=4, font=("Helvetica", 12), bg='#212529', fg='white')
         self.text_widget.pack(fill="x", pady=5)
-        
+
         # Add scrollbar to text widget
         text_scrollbar = ttk.Scrollbar(self.text_frame, orient="vertical", command=self.text_widget.yview)
         text_scrollbar.pack(side="right", fill="y")
         self.text_widget.configure(yscrollcommand=text_scrollbar.set)
-    
+
     def on_checkbox_change(self, equipment):
         if equipment == "Other":
             if self.app.equipment_vars["Other"].get():
@@ -762,7 +777,7 @@ class EquipmentSelection(tk.Frame):
                 self.text_frame.pack_forget()
         # Remove automatic advancement
         # Just update the UI without advancing to next question
-    
+
     def update_numbering(self, number):
         self.question_label.config(text=f"{number}. Available equipment:")
 
@@ -775,72 +790,78 @@ class EquipmentSelection(tk.Frame):
                 equipment.append(f"Other: {other_equipment}")
         return equipment
 
+
 class WorkoutDuration(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
-        
+
         # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-        
-        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300)
+
+        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white',
+                                       wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
-        dropdown = ttk.Combobox(self.center_frame, textvariable=app.duration_var, 
-                              values=["15 minutes", "30 minutes", "45 minutes", "60 minutes"])
+        dropdown = ttk.Combobox(self.center_frame, textvariable=app.duration_var,
+                                values=["15 minutes", "30 minutes", "45 minutes", "60 minutes"])
         dropdown.pack(fill="x", pady=5)
         # Remove automatic advancement
         dropdown.bind("<<ComboboxSelected>>", lambda e: None)
         # Make entire dropdown clickable to show list
         dropdown.bind("<Button-1>", lambda e: dropdown.focus_set() or dropdown.event_generate('<Down>'))
-    
+
     def update_numbering(self, number):
         self.question_label.config(text=f"{number}. Workout duration?")
+
 
 class WorkoutLocation(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
-        
+
         # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-        
-        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300)
+
+        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white',
+                                       wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
-        dropdown = ttk.Combobox(self.center_frame, textvariable=app.location_var, 
-                              values=["Gym", "Home", "Outdoors"])
+        dropdown = ttk.Combobox(self.center_frame, textvariable=app.location_var,
+                                values=["Gym", "Home", "Outdoors"])
         dropdown.pack(fill="x", pady=5)
         # Remove automatic advancement
         dropdown.bind("<<ComboboxSelected>>", lambda e: None)
         # Make entire dropdown clickable to show list
         dropdown.bind("<Button-1>", lambda e: dropdown.focus_set() or dropdown.event_generate('<Down>'))
-    
+
     def update_numbering(self, number):
         self.question_label.config(text=f"{number}. Where will you work out?")
+
 
 class InjuryRestrictions(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
-        
+
         # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-        
-        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300)
+
+        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white',
+                                       wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
-        
+
         # Create a frame for radio buttons
         self.radio_frame = tk.Frame(self.center_frame, bg='#212529')
         self.radio_frame.pack(fill="x", pady=5)
-        
+
         # Create radio buttons with custom appearance
         for option in ["No", "Yes"]:
             # Create a frame for each radio button to control spacing
             radio_container = tk.Frame(self.radio_frame, bg='#212529')
             radio_container.pack(side="left", padx=10)
-            
+
             # Create the radio button with custom indicator
             radio = tk.Radiobutton(
                 radio_container,
@@ -860,25 +881,25 @@ class InjuryRestrictions(tk.Frame):
                 highlightthickness=0  # No highlight
             )
             radio.pack(side="left")
-            
+
             # Add click binding to the radio button
             radio.bind("<Button-1>", lambda e, r=radio: self.on_radio_click(r))
-        
+
         # Create text entry frame (initially hidden)
         self.text_frame = tk.Frame(self.center_frame, bg='#212529')
-        self.text_label = tk.Label(self.text_frame, text="Please describe your injuries/restrictions:", 
-                                  font=("Helvetica", 12), bg='#212529', fg='white')
+        self.text_label = tk.Label(self.text_frame, text="Please describe your injuries/restrictions:",
+                                   font=("Helvetica", 12), bg='#212529', fg='white')
         self.text_label.pack(anchor="w", pady=(20, 5))
-        
+
         # Create text widget for multi-line input
         self.text_widget = tk.Text(self.text_frame, height=4, font=("Helvetica", 12), bg='#212529', fg='white')
         self.text_widget.pack(fill="x", pady=5)
-        
+
         # Add scrollbar to text widget
         text_scrollbar = ttk.Scrollbar(self.text_frame, orient="vertical", command=self.text_widget.yview)
         text_scrollbar.pack(side="right", fill="y")
         self.text_widget.configure(yscrollcommand=text_scrollbar.set)
-    
+
     def on_radio_click(self, radio):
         # Set the variable value
         self.app.injury_var.set(radio["value"])
@@ -886,14 +907,14 @@ class InjuryRestrictions(tk.Frame):
         self.on_injury_selection()
         # Update the radio button state
         radio.select()
-    
+
     def on_injury_selection(self):
         # Only show/hide the text input frame without advancing
         if self.app.injury_var.get() == "Yes":
             self.text_frame.pack(fill="x", pady=10)
         else:
             self.text_frame.pack_forget()
-    
+
     def update_numbering(self, number):
         self.question_label.config(text=f"{number}. Any injuries/restrictions?")
 
@@ -902,61 +923,65 @@ class InjuryRestrictions(tk.Frame):
             return self.text_widget.get("1.0", "end-1c").strip()
         return None
 
+
 class WorkoutStyle(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
-        
+
         # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-        
-        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300)
+
+        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white',
+                                       wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
         dropdown = ttk.Combobox(self.center_frame, textvariable=app.style_var,
-                                values=["Circuit", "Supersets", "Traditional sets", "HIIT", "Yoga/Pilates", "Stretching/Mobility"])
+                                values=["Circuit", "Supersets", "Traditional sets", "HIIT", "Yoga/Pilates",
+                                        "Stretching/Mobility"])
         dropdown.pack(fill="x", pady=5)
         # Remove automatic advancement
         dropdown.bind("<<ComboboxSelected>>", lambda e: None)
         # Make entire dropdown clickable to show list
         dropdown.bind("<Button-1>", lambda e: dropdown.focus_set() or dropdown.event_generate('<Down>'))
-    
+
     def update_numbering(self, number):
         self.question_label.config(text=f"{number}. Preferred workout style?")
+
 
 class WorkoutPlanPage(tk.Frame):
     def __init__(self, parent, app, responses):
         super().__init__(parent, bg='#212529')
         self.app = app
-        
+
         # Create main container
         self.main_container = tk.Frame(self, padx=40, pady=40, bg='#212529')
         self.main_container.pack(fill="both", expand=True)
-        
+
         # Create title frame
         self.title_frame = tk.Frame(self.main_container, bg='#212529', padx=10)
         self.title_frame.pack(fill="x", pady=(0, 20))
-        
-        self.main_title_label = tk.Label(self.title_frame, text="CHISELED AI", 
-                             font=("Impact", 50), bg='#212529', fg='#eb5e28', wraplength=300)
+
+        self.main_title_label = tk.Label(self.title_frame, text="CHISELED AI",
+                                         font=("Impact", 50), bg='#212529', fg='#eb5e28', wraplength=300)
         self.main_title_label.pack()
-        
-        self.main_subtitle_label = tk.Label(self.title_frame, text="YOUR PERSONAL WORKOUT PLANNER", 
-                                font=("Helvetica", 14), bg='#212529', fg='white', wraplength=300)
+
+        self.main_subtitle_label = tk.Label(self.title_frame, text="YOUR PERSONAL WORKOUT PLANNER",
+                                            font=("Helvetica", 14), bg='#212529', fg='white', wraplength=300)
         self.main_subtitle_label.pack()
-        
+
         # Create plan container
         self.plan_container = tk.Frame(self.main_container, bg='#212529', padx=10)
         self.plan_container.pack(fill="both", expand=True, pady=20)
-        
+
         # Check if this is a saved plan
         is_saved_plan = 'plan_text' in responses and 'timestamp' in responses
-        
+
         if not is_saved_plan:
             # Show loading frame only for new plans
             self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
             self.loading_frame.pack(fill="both", expand=True)
-            
+
             self.loading_label = tk.Label(
                 self.loading_frame,
                 text="Generating your personalized workout plan...",
@@ -965,7 +990,7 @@ class WorkoutPlanPage(tk.Frame):
                 fg='white'
             )
             self.loading_label.pack(pady=20)
-            
+
             self.loading_dots = tk.Label(
                 self.loading_frame,
                 text="",
@@ -974,24 +999,24 @@ class WorkoutPlanPage(tk.Frame):
                 fg='#eb5e28'
             )
             self.loading_dots.pack()
-            
+
             self.dots_count = 0
             self.animate_loading()
-            
+
             # Start plan generation in a separate thread
             self.after(100, lambda: self.generate_and_display_plan(responses))
         else:
             # Display saved plan immediately
             self.display_workout_plan(responses, is_saved_plan=True)
-    
+
     def start_new_plan(self):
         """Start a new workout plan by showing the main form"""
         # Destroy the current workout plan page
         self.destroy()
-        
+
         # Show the main form
         self.app.show_main_form()
-    
+
     def animate_loading(self):
         """Animate the loading dots"""
         if hasattr(self, 'loading_dots') and self.loading_dots.winfo_exists():
@@ -999,111 +1024,76 @@ class WorkoutPlanPage(tk.Frame):
             self.loading_dots.config(text=dots)
             self.dots_count += 1
             self.after(500, self.animate_loading)
-    
+
     def generate_and_display_plan(self, responses):
         """Generate the plan and update the display"""
         # Remove loading frame if it exists
         if hasattr(self, 'loading_frame'):
             self.loading_frame.pack_forget()
-        
+
         # Generate new plan
         plan = self.generate_workout_plan(responses)
-        
+
         # Save the generated plan
         responses['plan_text'] = plan
         from datetime import datetime
         current_time = datetime.now()
         responses['timestamp'] = current_time.strftime("%B %d, %Y | %I:%M%p").replace("AM", "am").replace("PM", "pm")
         self.app.save_workout_plan(responses)
-        
+
         # Display the workout plan
         self.display_workout_plan(responses, is_saved_plan=True)
-    
+
     def display_workout_plan(self, responses, is_saved_plan=False):
         # Clear any existing plan display and buttons
         for widget in self.plan_container.winfo_children():
             widget.destroy()
-        
+
         # Create a main content frame that will hold both the text and buttons
         content_frame = tk.Frame(self.plan_container, bg='#212529')
         content_frame.pack(fill="both", expand=True)
-        
+
         # Create button container at the top
         self.button_container = tk.Frame(content_frame, bg='#212529', padx=20, pady=10)
         self.button_container.pack(fill="x", pady=(0, 20))
 
         # Create buttons
-        width = self.app.winfo_width()
-        button_width = 150 if width < 450 else 200
-        button_height = 40 if width < 450 else 50
-        font_size = 12 if width < 450 else 14
+        self.create_buttons()  # Call a method to create buttons
 
-        # Create refresh plan button
-        self.refresh_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
-                                         height=button_height, width=button_width)
-        self.refresh_label = tk.Label(
-            self.refresh_canvas,
-            text="Refresh Plan",
-            font=("Helvetica", font_size, "bold"),
-            bg='#212529',
-            fg='white',
-            cursor="hand2"
-        )
-
-        # Create new plan button
-        self.new_plan_canvas = tk.Canvas(self.button_container, bg='#212529', highlightthickness=0, 
-                                  height=button_height, width=button_width)
-        self.new_plan_label = tk.Label(
-            self.new_plan_canvas,
-            text="New Plan",
-            font=("Helvetica", font_size, "bold"),
-            bg='#eb5e28',
-            fg='white',
-            cursor="hand2"
-        )
-
-        # Pack buttons based on width
+        # Call the layout update method
         self.update_button_layout()
-
-        # Finalize button labels
-        self.refresh_canvas.pack(side="top", fill="x", pady=(0, 5))  # Ensure refresh button is packed
-        self.refresh_label.place(relx=0.5, rely=0.5, anchor='center')
-        self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan(responses))
-
-        self.new_plan_canvas.pack(side="top", fill="x")  # Ensure new plan button is packed
-        self.new_plan_label.place(relx=0.5, rely=0.5, anchor='center')
-        self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
 
         # Create a container for the text area that will expand
         text_container = tk.Frame(content_frame, bg='#212529')
         text_container.pack(fill="both", expand=True)
-        
+
         # Create a frame to hold the text widget and scrollbar
         text_frame = tk.Frame(text_container, bg='#212529')
         text_frame.pack(fill="both", expand=True)
-        
+
         # Create a text widget for the workout plan
         self.plan_text = tk.Text(text_frame, wrap=tk.WORD, bg='#212529', fg='white',
-                               font=("Helvetica", 14), padx=10, pady=10,
-                               spacing1=5, spacing2=2, spacing3=5,
-                               highlightthickness=0,  # Remove highlight border
-                               borderwidth=0)  # Remove border
+                                 font=("Helvetica", 14), padx=10, pady=10,
+                                 spacing1=5, spacing2=2, spacing3=5,
+                                 highlightthickness=0,  # Remove highlight border
+                                 borderwidth=0)  # Remove border
         self.plan_text.pack(side="left", fill="both", expand=True)
-        
+
         # Add scrollbar
         scrollbar = ttk.Scrollbar(text_frame, orient="vertical", command=self.plan_text.yview)
         scrollbar.pack(side="right", fill="y")
         self.plan_text.configure(yscrollcommand=scrollbar.set)
-        
+
         # Configure tags for different text styles
         self.plan_text.tag_configure("header", font=("Helvetica", 18, "bold"), foreground="#eb5e28", justify="left")
         self.plan_text.tag_configure("subheader", font=("Helvetica", 16, "bold"), foreground="#eb5e28", justify="left")
         self.plan_text.tag_configure("h3", font=("Helvetica", 15, "bold"), foreground="#eb5e28", justify="left")
-        self.plan_text.tag_configure("exercise_link", font=("Helvetica", 14, "bold"), foreground="#4dabf7", underline=1, justify="left")
+        self.plan_text.tag_configure("exercise_link", font=("Helvetica", 14, "bold"), foreground="#4dabf7", underline=1,
+                                     justify="left")
         self.plan_text.tag_configure("bullet", lmargin1=20, lmargin2=40, justify="left")
         self.plan_text.tag_configure("normal", font=("Helvetica", 14), justify="left")
         self.plan_text.tag_configure("timestamp", font=("Helvetica", 12), foreground="#eb5e28", justify="left")
-        
+
         # Add timestamp at the top
         if is_saved_plan and 'timestamp' in responses:
             timestamp = responses['timestamp']
@@ -1111,16 +1101,16 @@ class WorkoutPlanPage(tk.Frame):
             current_time = datetime.now()
             timestamp = current_time.strftime("%B %d, %Y | %I:%M%p").replace("AM", "am").replace("PM", "pm")
             responses['timestamp'] = timestamp
-        
+
         self.plan_text.insert("end", timestamp + "\n\n", "timestamp")
-        
+
         # Get the plan text
         if is_saved_plan and 'plan_text' in responses:
             plan = responses['plan_text']
         else:
             plan = self.generate_workout_plan(responses)
             responses['plan_text'] = plan
-        
+
         # Process and insert the plan with formatting
         lines = plan.split('\n')
         for line in lines:
@@ -1128,7 +1118,7 @@ class WorkoutPlanPage(tk.Frame):
             if not line:
                 self.plan_text.insert("end", "\n")
                 continue
-            
+
             if line.startswith('#'):
                 # Header
                 header_text = line.lstrip('#').strip()
@@ -1139,21 +1129,21 @@ class WorkoutPlanPage(tk.Frame):
                 self.plan_text.insert("end", subheader_text + "\n", "subheader")
             elif line.startswith('[') and '](' in line and ')' in line:
                 # Exercise link
-                exercise_name = line[line.find('[')+1:line.find(']')]
-                url = line[line.find('(')+1:line.find(')')]
-                
+                exercise_name = line[line.find('[') + 1:line.find(']')]
+                url = line[line.find('(') + 1:line.find(')')]
+
                 # Insert the exercise name as a clickable link
                 start_index = self.plan_text.index("end-1c")
                 self.plan_text.insert("end", exercise_name, "exercise_link")
                 end_index = self.plan_text.index("end-1c")
-                
+
                 # Add a newline after the link
                 self.plan_text.insert("end", "\n")
-                
+
                 # Create a click handler for this specific link
                 def make_click_handler(url):
                     return lambda event: self.open_url(url)
-                
+
                 # Bind the click event to the specific text range
                 self.plan_text.tag_bind("exercise_link", "<Button-1>", make_click_handler(url))
                 self.plan_text.tag_bind("exercise_link", "<Enter>", lambda e: self.plan_text.config(cursor="hand2"))
@@ -1185,22 +1175,68 @@ class WorkoutPlanPage(tk.Frame):
                     self.plan_text.insert("end", "\n")
                 else:
                     self.plan_text.insert("end", line + "\n", "normal")
-        
+
         # Make it read-only
         self.plan_text.config(state="disabled")
-        
+
         # Add some spacing at the end
         self.plan_text.insert("end", "\n\n")
-        
+
         # Force update of all widgets
         self.update_idletasks()
+
+    def create_buttons(self):
+        """Create the refresh and new plan buttons."""
+        # Create button container
+        self.button_container = tk.Frame(self, bg="#1a1a1a", padx=20, pady=20)
+        self.button_container.pack(side="bottom", fill="x", pady=(0, 20))
+
+        # Create refresh button
+        self.refresh_canvas = tk.Canvas(self.button_container, width=200, height=50, 
+                                      bg="#1a1a1a", highlightthickness=0)
+        self.refresh_canvas.create_rounded_rect(0, 0, 200, 50, 10, fill="#2a2a2a")
+        self.refresh_label = tk.Label(self.refresh_canvas, text="Refresh Plan", 
+                                    font=("Helvetica", 12), bg="#2a2a2a", fg="white")
+        self.refresh_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.refresh_canvas.bind("<Button-1>", lambda e: self.refresh_plan(self.responses))
+        self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan(self.responses))
+
+        # Create new plan button
+        self.new_plan_canvas = tk.Canvas(self.button_container, width=200, height=50, 
+                                       bg="#1a1a1a", highlightthickness=0)
+        self.new_plan_canvas.create_rounded_rect(0, 0, 200, 50, 10, fill="#2a2a2a")
+        self.new_plan_label = tk.Label(self.new_plan_canvas, text="New Plan", 
+                                     font=("Helvetica", 12), bg="#2a2a2a", fg="white")
+        self.new_plan_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.new_plan_canvas.bind("<Button-1>", lambda e: self.start_new_plan())
+        self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
+
+        # Initial layout
+        self.update_button_layout()
+
+    def update_button_layout(self):
+        """Update the layout of the buttons based on the window width."""
+        width = self.winfo_width()
+        
+        # Clear previous packing
+        for widget in self.button_container.winfo_children():
+            widget.pack_forget()
+
+        if width <= 500:
+            # Stack buttons vertically
+            self.refresh_canvas.pack(side="top", fill="x", pady=(0, 5))
+            self.new_plan_canvas.pack(side="top", fill="x")
+        else:
+            # Pack buttons side by side
+            self.refresh_canvas.pack(side="left", padx=10)
+            self.new_plan_canvas.pack(side="left", padx=10)
 
     def refresh_plan(self, responses):
         """Generate a new workout plan with the same preferences"""
         # Remove the current plan display
         for widget in self.plan_container.winfo_children():
             widget.destroy()
-        
+
         # Generate and display a new plan
         self.display_workout_plan(responses, is_saved_plan=False)
 
@@ -1208,7 +1244,7 @@ class WorkoutPlanPage(tk.Frame):
         """Open the URL in the default web browser"""
         import webbrowser
         webbrowser.open(url)
-    
+
     def generate_workout_plan(self, responses):
         # Create a prompt for Gemini based on user responses
         available_exercises = []
@@ -1218,16 +1254,16 @@ class WorkoutPlanPage(tk.Frame):
                 exercises = EXERCISE_DB.get_exercises_by_equipment(equipment)
                 available_exercises.extend(exercises)
                 logging.info(f"Found {len(exercises)} exercises for equipment: {equipment}")
-            
+
             # If no exercises found for specific equipment, get all exercises
             if not available_exercises:
                 available_exercises = EXERCISE_DB.get_random_exercises(20)
                 logging.info("No exercises found for specific equipment, using random exercises")
-            
+
             # Get unique exercise names
             exercise_names = list(set(ex['exercise_name'] for ex in available_exercises))
             logging.info(f"Available exercises: {exercise_names}")
-            
+
             # Create a prompt that explicitly lists the exercises
             exercise_list = "\n".join([f"- {name}" for name in exercise_names])
         else:
@@ -1333,24 +1369,24 @@ Format the plan in a clear, easy-to-follow structure. Use the following format:
             # Generate the workout plan using Gemini
             logging.info("Generating workout plan with Gemini API...")
             response = model.generate_content(prompt)
-            
+
             if not response or not response.text:
                 logging.error("Empty response from Gemini API")
                 raise ValueError("Empty response from Gemini API")
-                
+
             plan_text = response.text
             logging.info("Successfully generated workout plan")
-            
+
             # Process the plan to add video links
             lines = plan_text.split('\n')
             processed_lines = []
-            
+
             for line in lines:
                 line = line.strip()
                 # Check if the line is an exercise name (not a header, bullet point, or already linked)
-                if (line and 
-                    not line.startswith(('#', '-', '[')) and 
-                    ']' not in line):
+                if (line and
+                        not line.startswith(('#', '-', '[')) and
+                        ']' not in line):
                     # Try to find a matching exercise name
                     matching_exercise = None
                     for exercise in exercise_names:
@@ -1358,7 +1394,7 @@ Format the plan in a clear, easy-to-follow structure. Use the following format:
                             matching_exercise = exercise
                             logging.info(f"Found exact match for exercise: {exercise}")
                             break
-                    
+
                     if matching_exercise:
                         logging.info(f"Getting video for exercise: {matching_exercise}")
                         video_url, source = get_youtube_video(matching_exercise)
@@ -1373,9 +1409,9 @@ Format the plan in a clear, easy-to-follow structure. Use the following format:
                         logging.debug(f"No match found for line: {line}")
                 else:
                     processed_lines.append(line)
-            
+
             return '\n'.join(processed_lines)
-            
+
         except Exception as e:
             logging.error(f"Error generating workout plan: {str(e)}")
             logging.error(f"Error type: {type(e).__name__}")
@@ -1396,6 +1432,7 @@ Workout Style: {responses['Workout Style']}
 
 Note: We encountered an error while generating your workout plan. Please try again later or contact support if the issue persists.
 Error details: {str(e)}"""
+
 
 if __name__ == "__main__":
     app = WorkoutApp()
