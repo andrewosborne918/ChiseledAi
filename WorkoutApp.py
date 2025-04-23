@@ -1209,26 +1209,26 @@ class WorkoutPlanPage(tk.Frame):
 
     def create_buttons(self):
         """Create the refresh and new plan buttons."""
-        # Create button container
-        self.button_container = tk.Frame(self, bg="#1a1a1a", padx=20, pady=20)
-        self.button_container.pack(side="bottom", fill="x", pady=(0, 20))
+        # Create button container at the top
+        self.button_container = tk.Frame(self.plan_container, bg='#212529', padx=20, pady=10)
+        self.button_container.pack(fill="x", pady=(0, 20))
 
         # Create refresh button
         self.refresh_canvas = tk.Canvas(self.button_container, width=200, height=50, 
-                                      bg="#1a1a1a", highlightthickness=0)
-        self.refresh_canvas.create_rounded_rect(0, 0, 200, 50, 10, fill="#2a2a2a")
+                                      bg='#212529', highlightthickness=0)
+        self.refresh_canvas.create_rounded_rect(0, 0, 200, 50, 10, fill='#eb5e28')
         self.refresh_label = tk.Label(self.refresh_canvas, text="Refresh Plan", 
-                                    font=("Helvetica", 12), bg="#2a2a2a", fg="white")
+                                    font=("Helvetica", 14, "bold"), bg='#eb5e28', fg='white')
         self.refresh_label.place(relx=0.5, rely=0.5, anchor="center")
         self.refresh_canvas.bind("<Button-1>", lambda e: self.refresh_plan(self.responses))
         self.refresh_label.bind("<Button-1>", lambda e: self.refresh_plan(self.responses))
 
         # Create new plan button
         self.new_plan_canvas = tk.Canvas(self.button_container, width=200, height=50, 
-                                       bg="#1a1a1a", highlightthickness=0)
-        self.new_plan_canvas.create_rounded_rect(0, 0, 200, 50, 10, fill="#2a2a2a")
+                                       bg='#212529', highlightthickness=0)
+        self.new_plan_canvas.create_rounded_rect(0, 0, 200, 50, 10, fill='#eb5e28')
         self.new_plan_label = tk.Label(self.new_plan_canvas, text="New Plan", 
-                                     font=("Helvetica", 12), bg="#2a2a2a", fg="white")
+                                     font=("Helvetica", 14, "bold"), bg='#eb5e28', fg='white')
         self.new_plan_label.place(relx=0.5, rely=0.5, anchor="center")
         self.new_plan_canvas.bind("<Button-1>", lambda e: self.start_new_plan())
         self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
