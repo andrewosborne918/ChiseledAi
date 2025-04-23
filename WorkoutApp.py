@@ -1044,9 +1044,9 @@ class WorkoutPlanPage(tk.Frame):
         self.plan_text.configure(yscrollcommand=scrollbar.set)
 
         # Configure tags for different text styles
-        self.plan_text.tag_configure("header", font=("Helvetica", 18, "bold"), foreground="#eb5e28", justify="left")
-        self.plan_text.tag_configure("subheader", font=("Helvetica", 16, "bold"), foreground="#eb5e28", justify="left")
-        self.plan_text.tag_configure("h3", font=("Helvetica", 15, "bold"), foreground="#eb5e28", justify="left")
+        self.plan_text.tag_configure("header", font=("Helvetica", 18, "bold"), foreground="#eb5e28")
+        self.plan_text.tag_configure("subheader", font=("Helvetica", 16, "bold"), foreground="#eb5e28")
+        self.plan_text.tag_configure("h3", font=("Helvetica", 15, "bold"), foreground="#eb5e28")
         self.plan_text.tag_configure("exercise_link", font=("Helvetica", 14, "bold"), foreground="#4dabf7", underline=1)
         self.plan_text.tag_configure("bullet", lmargin1=20, lmargin2=40)
         self.plan_text.tag_configure("normal", font=("Helvetica", 14))
@@ -1062,12 +1062,15 @@ class WorkoutPlanPage(tk.Frame):
 
         self.plan_text.insert("end", timestamp + "\n\n", "timestamp")
 
-        # Get the plan text
+        # Get the plan text and instructions
         if is_saved_plan and 'plan_text' in responses:
             plan = responses['plan_text']
         else:
             plan = self.generate_workout_plan(responses)
             responses['plan_text'] = plan
+
+        # Store exercise instructions for later use
+        self.exercise_instructions = responses.get('exercise_instructions', {})
 
         # Process and insert the plan with formatting
         lines = plan.split('\n')
@@ -1085,22 +1088,24 @@ class WorkoutPlanPage(tk.Frame):
                 # Subheader
                 subheader_text = line.lstrip('#').strip()
                 self.plan_text.insert("end", subheader_text + "\n", "subheader")
-            elif line.startswith('[') and '](' in line and ')' in line:
+            elif line.startswith('[') and ']' in line:
                 # Exercise link
-                exercise_name = line[line.find('[') + 1:line.find(']')]
-                url = line[line.find('(') + 1:line.find(')')]
+                exercise_name = line[1:-1]  # Remove the brackets
 
                 # Insert the exercise name as a clickable link
                 self.plan_text.insert("end", exercise_name + "\n", "exercise_link")
 
-                # Create a click handler for this specific link
-                def make_click_handler(url):
-                    return lambda event: self.open_url(url)
+                # Create a click handler for this exercise
+                def make_click_handler(name):
+                    def handler(event):
+                        instructions = self.exercise_instructions.get(name, "Instructions not available.")
+                        ExerciseInstructionPopup(self, name, instructions)
+                    return handler
 
                 # Bind the click event to the specific text range
                 tag_name = f"link_{exercise_name}"
                 self.plan_text.tag_add(tag_name, "end-2c linestart", "end-1c")
-                self.plan_text.tag_bind(tag_name, "<Button-1>", make_click_handler(url))
+                self.plan_text.tag_bind(tag_name, "<Button-1>", make_click_handler(exercise_name))
                 self.plan_text.tag_bind(tag_name, "<Enter>", lambda e: self.plan_text.config(cursor="hand2"))
                 self.plan_text.tag_bind(tag_name, "<Leave>", lambda e: self.plan_text.config(cursor=""))
             elif line.startswith('-'):
@@ -1240,67 +1245,7 @@ Formatting Guidelines:
    - Include sets, reps, rest time, and important notes
 5. Use clear spacing between sections and exercises
 
-Format the plan in a clear, easy-to-follow structure. Use the following format:
-
-# [Workout Title]
-
-[Introduction text]
-
-## Warm-up ([duration])
-[Workout description]
-
-[Exercise Name]
-- Sets: [number]
-- Reps: [number]
-- Rest: [time]
-- Notes: [any important notes]
-
-[Exercise Name]
-- Sets: [number]
-- Reps: [number]
-- Rest: [time]
-- Notes: [any important notes]
-
-...
-
-## Main Workout ([duration])
-[Workout description]
-
-[Exercise Name]
-- Sets: [number]
-- Reps: [number]
-- Rest: [time]
-- Notes: [any important notes]
-
-[Exercise Name]
-- Sets: [number]
-- Reps: [number]
-- Rest: [time]
-- Notes: [any important notes]
-
-...
-
-## Cool-down ([duration])
-[Workout description]
-
-[Exercise Name]
-- Sets: [number]
-- Reps: [number]
-- Rest: [time]
-- Notes: [any important notes]
-
-[Exercise Name]
-- Sets: [number]
-- Reps: [number]
-- Rest: [time]
-- Notes: [any important notes]
-
-...
-
-## Specific Notes and Modifications
-[Notes text]
-
-[Closing text]"""
+Format the plan in a clear, easy-to-follow structure."""
 
         try:
             # Generate the workout plan using Gemini
@@ -1314,10 +1259,11 @@ Format the plan in a clear, easy-to-follow structure. Use the following format:
             plan_text = response.text
             logging.info("Successfully generated workout plan")
 
-            # Process the plan to add video links
+            # Process the plan to identify exercises and get their instructions
             lines = plan_text.split('\n')
             processed_lines = []
             in_exercise_section = False
+            exercise_instructions = {}
             
             for line in lines:
                 line = line.strip()
@@ -1336,17 +1282,42 @@ Format the plan in a clear, easy-to-follow structure. Use the following format:
                 # Process potential exercise names
                 if in_exercise_section and not any(line.startswith(x) for x in ['#', '-', '[', '•']) and ':' not in line and len(line.split()) <= 4:
                     # This is likely an exercise name
-                    video_url, source = get_youtube_video(line)
-                    if video_url:
-                        processed_lines.append(f"[{line}]({video_url})")
-                        logging.info(f"Added video link for {line}: {video_url}")
-                    else:
-                        processed_lines.append(line)
-                        logging.warning(f"No video found for {line}")
+                    exercise_name = line
+                    
+                    # Generate instructions for this exercise
+                    instruction_prompt = f"""Provide detailed instructions for the exercise: {exercise_name}
+
+Please include:
+1. Starting position
+2. Movement execution
+3. Breathing pattern
+4. Common mistakes to avoid
+5. Form cues
+6. Safety tips
+
+Keep the instructions clear and concise, focusing on proper form and safety."""
+
+                    try:
+                        instruction_response = model.generate_content(instruction_prompt)
+                        if instruction_response and instruction_response.text:
+                            exercise_instructions[exercise_name] = instruction_response.text.strip()
+                            logging.info(f"Generated instructions for {exercise_name}")
+                        else:
+                            exercise_instructions[exercise_name] = "Instructions not available."
+                            logging.warning(f"No instructions generated for {exercise_name}")
+                    except Exception as e:
+                        exercise_instructions[exercise_name] = "Instructions not available."
+                        logging.error(f"Error generating instructions for {exercise_name}: {e}")
+
+                    # Add the exercise name as a clickable element
+                    processed_lines.append(f"[{exercise_name}]")
                 else:
                     # Not an exercise name, add as is
                     processed_lines.append(line)
 
+            # Store the exercise instructions in the responses dictionary
+            responses['exercise_instructions'] = exercise_instructions
+            
             return '\n'.join(processed_lines)
 
         except Exception as e:
@@ -1369,6 +1340,69 @@ Workout Style: {responses['Workout Style']}
 
 Note: We encountered an error while generating your workout plan. Please try again later or contact support if the issue persists.
 Error details: {str(e)}"""
+
+
+class ExerciseInstructionPopup(tk.Toplevel):
+    def __init__(self, parent, exercise_name, instructions):
+        super().__init__(parent)
+        self.title(f"{exercise_name} Instructions")
+        
+        # Set window properties
+        self.geometry("400x600")
+        self.configure(bg='#212529')
+        self.transient(parent)  # Set to be on top of the main window
+        self.grab_set()  # Make the popup modal
+        
+        # Create main container
+        main_container = tk.Frame(self, bg='#212529', padx=20, pady=20)
+        main_container.pack(fill="both", expand=True)
+        
+        # Add exercise name as header
+        header = tk.Label(main_container, text=exercise_name,
+                         font=("Helvetica", 18, "bold"),
+                         bg='#212529', fg='#eb5e28')
+        header.pack(pady=(0, 20))
+        
+        # Create text widget for instructions
+        text_frame = tk.Frame(main_container, bg='#212529')
+        text_frame.pack(fill="both", expand=True)
+        
+        self.text_widget = tk.Text(text_frame, wrap=tk.WORD,
+                                 bg='#212529', fg='white',
+                                 font=("Helvetica", 12),
+                                 padx=10, pady=10,
+                                 highlightthickness=0,
+                                 borderwidth=0)
+        self.text_widget.pack(side="left", fill="both", expand=True)
+        
+        # Add scrollbar
+        scrollbar = ttk.Scrollbar(text_frame, orient="vertical",
+                                command=self.text_widget.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.text_widget.configure(yscrollcommand=scrollbar.set)
+        
+        # Insert instructions
+        self.text_widget.insert("1.0", instructions)
+        self.text_widget.config(state="disabled")
+        
+        # Add close button
+        close_button = tk.Button(main_container, text="Close",
+                               command=self.destroy,
+                               bg='#eb5e28', fg='white',
+                               font=("Helvetica", 12, "bold"),
+                               padx=20, pady=5,
+                               relief="flat",
+                               activebackground='#d44e1e',
+                               activeforeground='white')
+        close_button.pack(pady=(20, 0))
+        
+        # Center the window on the screen
+        self.update_idletasks()
+        width = self.winfo_width()
+        height = self.winfo_height()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry(f"{width}x{height}+{x}+{y}")
 
 
 if __name__ == "__main__":
