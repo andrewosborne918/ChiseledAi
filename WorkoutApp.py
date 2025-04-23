@@ -16,6 +16,28 @@ from googleapiclient.errors import HttpError
 import pandas as pd
 from typing import Dict, List, Optional
 
+# Add rounded rectangle method to Canvas class
+def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
+    """Create a rounded rectangle on the canvas"""
+    points = [
+        x1 + radius, y1,
+        x2 - radius, y1,
+        x2, y1,
+        x2, y1 + radius,
+        x2, y2 - radius,
+        x2, y2,
+        x2 - radius, y2,
+        x1 + radius, y2,
+        x1, y2,
+        x1, y2 - radius,
+        x1, y1 + radius,
+        x1, y1,
+    ]
+    return self.create_polygon(points, smooth=True, **kwargs)
+
+# Add the method to the Canvas class
+tk.Canvas.create_rounded_rect = create_rounded_rect
+
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
