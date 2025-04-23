@@ -1016,17 +1016,17 @@ class WorkoutPlanPage(tk.Frame):
         for widget in self.plan_container.winfo_children():
             widget.destroy()
         
-        # Clear any existing buttons
-        if hasattr(self, 'button_container'):
-            self.button_container.destroy()
-        
         # Create a main content frame that will hold both the text and buttons
         content_frame = tk.Frame(self.plan_container, bg='#212529')
         content_frame.pack(fill="both", expand=True)
         
+        # Create a container for the text area with fixed height
+        text_container = tk.Frame(content_frame, bg='#212529')
+        text_container.pack(fill="both", expand=True, pady=(0, 10))
+        
         # Create a frame to hold the text widget and scrollbar
-        text_frame = tk.Frame(content_frame, bg='#212529')
-        text_frame.pack(fill="both", expand=True, pady=(0, 20))  # Add bottom padding for buttons
+        text_frame = tk.Frame(text_container, bg='#212529')
+        text_frame.pack(fill="both", expand=True)
         
         # Create a text widget for the workout plan
         self.plan_text = tk.Text(text_frame, wrap=tk.WORD, bg='#212529', fg='white',
@@ -1138,9 +1138,13 @@ class WorkoutPlanPage(tk.Frame):
         # Add some spacing at the end
         self.plan_text.insert("end", "\n\n")
         
-        # Create button container with fixed height
-        self.button_container = tk.Frame(content_frame, bg='#212529', padx=20, pady=10, height=60)
-        self.button_container.pack(side="bottom", fill="x", expand=False)
+        # Create a fixed-height frame for the buttons
+        button_frame = tk.Frame(content_frame, bg='#212529', height=70)
+        button_frame.pack(side="bottom", fill="x", expand=False)
+        
+        # Create button container
+        self.button_container = tk.Frame(button_frame, bg='#212529', padx=20, pady=10)
+        self.button_container.pack(expand=True, fill="both")
         
         # Create buttons
         width = self.app.winfo_width()
