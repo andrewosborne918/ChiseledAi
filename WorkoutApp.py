@@ -853,29 +853,11 @@ class InjuryRestrictions(tk.Frame):
         self.radio_frame = tk.Frame(self.center_frame, bg='#212529')
         self.radio_frame.pack(fill="x", pady=10)
 
-        # Create radio buttons with custom styling
-        style = ttk.Style()
-        style.configure("Custom.TRadiobutton",
-                      background='black',
-                      foreground='white',
-                      font=("Helvetica", 14))
-        
-        # Configure radio button colors
-        style.map("Custom.TRadiobutton",
-                 background=[('active', '#212529')],
-                 foreground=[('active', '#eb5e28')])
-
         # Create radio buttons
         for option in ["No", "Yes"]:
-            radio = ttk.Radiobutton(
-                self.radio_frame,
-                text=option,
-                value=option,
-                variable=app.injury_var,
-                style="Custom.TRadiobutton",
-                command=self.on_injury_selection
-            )
-            radio.pack(side="left", padx=20, pady=5)
+            tk.Radiobutton(self.radio_frame, text=option, variable=app.injury_var, value=option,
+                           command=self.on_injury_selection, font=("Helvetica", 12),
+                           bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
 
         # Create text entry frame (initially hidden)
         self.text_frame = tk.Frame(self.center_frame, bg='#212529')
