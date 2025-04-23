@@ -108,14 +108,18 @@ def get_youtube_video(exercise_name):
         if EXERCISE_DB:
             exercise = EXERCISE_DB.get_exercise(exercise_name)
             if exercise and exercise.get('video_url'):
+                logging.info(f"Found video URL in database for {exercise_name}: {exercise['video_url']}")
                 return exercise['video_url'], "Exercise Database"
+            else:
+                logging.info(f"No video URL found in database for {exercise_name}")
         
         # Fallback to YouTube search if no database match
         search_query = f"{exercise_name} exercise tutorial proper form"
         search_url = f"https://www.youtube.com/results?search_query={search_query.replace(' ', '+')}"
+        logging.info(f"Using YouTube search URL for {exercise_name}: {search_url}")
         return search_url, "YouTube Search"
     except Exception as e:
-        logging.error(f"Error getting video URL: {e}")
+        logging.error(f"Error getting video URL for {exercise_name}: {e}")
         return None, None
 
 def git_sync(commit_message="Auto-sync: Updated workout plan"):
@@ -1134,10 +1138,12 @@ class WorkoutPlanPage(tk.Frame):
             for equipment in responses['Equipment']:
                 exercises = EXERCISE_DB.get_exercises_by_equipment(equipment)
                 available_exercises.extend(exercises)
+                logging.info(f"Found {len(exercises)} exercises for equipment: {equipment}")
             
             # If no exercises found for specific equipment, get all exercises
             if not available_exercises:
                 available_exercises = EXERCISE_DB.get_random_exercises(20)
+                logging.info("No exercises found for specific equipment, using random exercises")
             
             # Get unique exercise names
             exercise_names = list(set(ex['exercise_name'] for ex in available_exercises))
@@ -1148,6 +1154,7 @@ class WorkoutPlanPage(tk.Frame):
         else:
             exercise_names = []
             exercise_list = ""
+            logging.warning("Exercise database not available")
 
         prompt = f"""Create a detailed, personalized workout plan based on the following user preferences:
 
@@ -1270,17 +1277,21 @@ Format the plan in a clear, easy-to-follow structure. Use the following format:
                     for exercise in exercise_names:
                         if exercise.lower() == line.lower():
                             matching_exercise = exercise
+                            logging.info(f"Found exact match for exercise: {exercise}")
                             break
                     
                     if matching_exercise:
-                        logging.info(f"Found matching exercise: {matching_exercise}")
+                        logging.info(f"Getting video for exercise: {matching_exercise}")
                         video_url, source = get_youtube_video(matching_exercise)
                         if video_url:
                             processed_lines.append(f"[{matching_exercise}]({video_url}) - {source}")
+                            logging.info(f"Added video link for {matching_exercise}: {video_url}")
                         else:
                             processed_lines.append(matching_exercise)
+                            logging.warning(f"No video found for {matching_exercise}")
                     else:
                         processed_lines.append(line)
+                        logging.debug(f"No match found for line: {line}")
                 else:
                     processed_lines.append(line)
             
