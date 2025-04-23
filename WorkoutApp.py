@@ -994,24 +994,27 @@ class WorkoutPlanPage(tk.Frame):
         if hasattr(self, 'button_container'):
             self.button_container.destroy()
         
-        # Create a text widget for the workout plan
-        self.plan_text = tk.Text(self.plan_container, wrap=tk.WORD, bg='#212529', fg='white',
-                               font=("Helvetica", 14), padx=10, pady=10, cursor="arrow")
-        self.plan_text.pack(fill="both", expand=True)
+        # Create a frame to hold the workout plan
+        self.plan_frame = tk.Frame(self.plan_container, bg='#212529')
+        self.plan_frame.pack(fill="both", expand=True)
         
-        # Add scrollbar
-        scrollbar = ttk.Scrollbar(self.plan_container, orient="vertical", command=self.plan_text.yview)
+        # Create a canvas and scrollbar for scrolling
+        self.canvas = tk.Canvas(self.plan_frame, bg='#212529', highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.plan_frame, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas, bg='#212529')
+        
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(
+                scrollregion=self.canvas.bbox("all")
+            )
+        )
+        
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+        
+        self.canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
-        self.plan_text.configure(yscrollcommand=scrollbar.set)
-        
-        # Configure tags for different text styles
-        self.plan_text.tag_configure("header", font=("Helvetica", 18, "bold"), foreground="#eb5e28")
-        self.plan_text.tag_configure("subheader", font=("Helvetica", 16, "bold"), foreground="#eb5e28")
-        self.plan_text.tag_configure("h3", font=("Helvetica", 15, "bold"), foreground="#eb5e28")
-        self.plan_text.tag_configure("exercise_link", font=("Helvetica", 14, "bold"), foreground="#4dabf7", underline=1)
-        self.plan_text.tag_configure("bullet", lmargin1=20, lmargin2=40)
-        self.plan_text.tag_configure("normal", font=("Helvetica", 14))
-        self.plan_text.tag_configure("timestamp", font=("Helvetica", 12), foreground="#eb5e28")
         
         # Add timestamp at the top
         if is_saved_plan and 'timestamp' in responses:
@@ -1021,7 +1024,9 @@ class WorkoutPlanPage(tk.Frame):
             timestamp = current_time.strftime("%B %d, %Y | %I:%M%p").replace("AM", "am").replace("PM", "pm")
             responses['timestamp'] = timestamp
         
-        self.plan_text.insert("end", timestamp + "\n\n", "timestamp")
+        timestamp_label = tk.Label(self.scrollable_frame, text=timestamp, 
+                                 font=("Helvetica", 12), bg='#212529', fg='#eb5e28')
+        timestamp_label.pack(pady=(0, 20))
         
         # Get the plan text
         if is_saved_plan and 'plan_text' in responses:
@@ -1030,82 +1035,55 @@ class WorkoutPlanPage(tk.Frame):
             plan = self.generate_workout_plan(responses)
             responses['plan_text'] = plan
         
-        # Store exercise URLs
-        self.exercise_urls = {}
-        
-        # Process and insert the plan with formatting
+        # Process and display the plan
         lines = plan.split('\n')
         for line in lines:
             line = line.strip()
             if not line:
-                self.plan_text.insert("end", "\n")
+                tk.Label(self.scrollable_frame, text="", bg='#212529').pack()
                 continue
             
             if line.startswith('#'):
                 # Header
                 header_text = line.lstrip('#').strip()
-                self.plan_text.insert("end", header_text + "\n", "header")
+                header_label = tk.Label(self.scrollable_frame, text=header_text,
+                                      font=("Helvetica", 18, "bold"), bg='#212529', fg='#eb5e28')
+                header_label.pack(pady=(20, 10))
             elif line.startswith('##'):
                 # Subheader
                 subheader_text = line.lstrip('#').strip()
-                self.plan_text.insert("end", subheader_text + "\n", "subheader")
+                subheader_label = tk.Label(self.scrollable_frame, text=subheader_text,
+                                         font=("Helvetica", 16, "bold"), bg='#212529', fg='#eb5e28')
+                subheader_label.pack(pady=(20, 10))
             elif line.startswith('[') and '](' in line and ')' in line:
                 # Exercise link
                 exercise_name = line[line.find('[')+1:line.find(']')]
                 url = line[line.find('(')+1:line.find(')')]
                 
-                # Store the URL for this line
-                line_start = self.plan_text.index("end-1c")
-                self.plan_text.insert("end", exercise_name + "\n", "exercise_link")
-                line_end = self.plan_text.index("end-1c")
-                self.exercise_urls[(line_start, line_end)] = url
+                # Create clickable exercise label
+                exercise_label = tk.Label(self.scrollable_frame, text=exercise_name,
+                                        font=("Helvetica", 14, "bold"), bg='#212529', fg='#4dabf7',
+                                        cursor="hand2")
+                exercise_label.pack(pady=5)
+                
+                # Bind click event
+                exercise_label.bind("<Button-1>", lambda e, url=url: self.open_url(url))
             elif line.startswith('-'):
                 # Bullet point
                 bullet_text = line.lstrip('-').strip()
-                # Check for bold text within bullet points
-                if '**' in bullet_text:
-                    parts = bullet_text.split('**')
-                    self.plan_text.insert("end", "• ", "bullet")
-                    for i, part in enumerate(parts):
-                        if i % 2 == 0:
-                            self.plan_text.insert("end", part, "normal")
-                        else:
-                            self.plan_text.insert("end", part, "h3")
-                    self.plan_text.insert("end", "\n")
-                else:
-                    self.plan_text.insert("end", "• " + bullet_text + "\n", "bullet")
+                bullet_label = tk.Label(self.scrollable_frame, text="• " + bullet_text,
+                                      font=("Helvetica", 14), bg='#212529', fg='white',
+                                      wraplength=600)
+                bullet_label.pack(anchor="w", padx=20, pady=2)
             else:
                 # Normal text
-                if '**' in line:
-                    parts = line.split('**')
-                    for i, part in enumerate(parts):
-                        if i % 2 == 0:
-                            self.plan_text.insert("end", part, "normal")
-                        else:
-                            self.plan_text.insert("end", part, "h3")
-                    self.plan_text.insert("end", "\n")
-                else:
-                    self.plan_text.insert("end", line + "\n", "normal")
-        
-        # Add click handler for the entire text widget
-        def on_click(event):
-            # Get the clicked position
-            index = self.plan_text.index(f"@{event.x},{event.y}")
-            
-            # Check if the click was on an exercise line
-            for (start, end), url in self.exercise_urls.items():
-                if self.plan_text.compare(start, "<=", index) and self.plan_text.compare(index, "<=", end):
-                    self.open_url(url)
-                    break
-        
-        # Bind the click event
-        self.plan_text.bind("<Button-1>", on_click)
-        
-        # Make it read-only
-        self.plan_text.config(state="disabled")
+                text_label = tk.Label(self.scrollable_frame, text=line,
+                                    font=("Helvetica", 14), bg='#212529', fg='white',
+                                    wraplength=600)
+                text_label.pack(pady=2)
         
         # Add some spacing at the end
-        self.plan_text.insert("end", "\n\n")
+        tk.Label(self.scrollable_frame, text="", bg='#212529').pack(pady=20)
         
         # Create button container
         self.button_container = tk.Frame(self.main_container, bg='#212529', padx=20, pady=10)
