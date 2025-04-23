@@ -1082,9 +1082,6 @@ class WorkoutPlanPage(tk.Frame):
         # Create buttons
         self.create_buttons()  # Call a method to create buttons
 
-        # Call the layout update method
-        self.update_button_layout()
-
         # Create a container for the text area that will expand
         text_container = tk.Frame(content_frame, bg='#212529')
         text_container.pack(fill="both", expand=True)
@@ -1209,10 +1206,6 @@ class WorkoutPlanPage(tk.Frame):
 
     def create_buttons(self):
         """Create the refresh and new plan buttons."""
-        # Create button container at the top
-        self.button_container = tk.Frame(self.plan_container, bg='#212529', padx=20, pady=10)
-        self.button_container.pack(fill="x", pady=(0, 20))
-
         # Create refresh button
         self.refresh_canvas = tk.Canvas(self.button_container, width=200, height=50, 
                                       bg='#212529', highlightthickness=0)
