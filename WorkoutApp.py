@@ -18,27 +18,30 @@ from typing import Dict, List, Optional
 
 # Add rounded rectangle method to Canvas class
 def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
-    """Draws a smooth rounded rectangle using arcs and lines."""
-    points = []
-
+    """Create a rounded rectangle on the canvas with smooth corners using a single polygon."""
     # Ensure radius doesn't exceed half the width or height
     radius = min(radius, abs(x2 - x1) / 2, abs(y2 - y1) / 2)
 
-    # Create the 4 arcs
-    points += [self.create_arc(x1, y1, x1 + 2 * radius, y1 + 2 * radius, start=90, extent=90, style='pieslice', **kwargs)]  # Top-left
-    points += [self.create_arc(x2 - 2 * radius, y1, x2, y1 + 2 * radius, start=0, extent=90, style='pieslice', **kwargs)]  # Top-right
-    points += [self.create_arc(x2 - 2 * radius, y2 - 2 * radius, x2, y2, start=270, extent=90, style='pieslice', **kwargs)]  # Bottom-right
-    points += [self.create_arc(x1, y2 - 2 * radius, x1 + 2 * radius, y2, start=180, extent=90, style='pieslice', **kwargs)]  # Bottom-left
+    # Define points for the rounded rectangle
+    points = [
+        x1 + radius, y1,  # Top edge starting point
+        x2 - radius, y1,  # Top edge ending point
+        x2, y1,          # Top-right corner control point
+        x2, y1 + radius, # Right edge starting point
+        x2, y2 - radius, # Right edge ending point
+        x2, y2,         # Bottom-right corner control point
+        x2 - radius, y2, # Bottom edge starting point
+        x1 + radius, y2, # Bottom edge ending point
+        x1, y2,         # Bottom-left corner control point
+        x1, y2 - radius, # Left edge starting point
+        x1, y1 + radius, # Left edge ending point
+        x1, y1,         # Top-left corner control point
+        x1 + radius, y1  # Back to start
+    ]
 
-    # Create the 4 sides (as rectangles between the arcs)
-    points += [self.create_rectangle(x1 + radius, y1, x2 - radius, y1 + radius, **kwargs)]  # Top
-    points += [self.create_rectangle(x2 - radius, y1 + radius, x2, y2 - radius, **kwargs)]  # Right
-    points += [self.create_rectangle(x1 + radius, y2 - radius, x2 - radius, y2, **kwargs)]  # Bottom
-    points += [self.create_rectangle(x1, y1 + radius, x1 + radius, y2 - radius, **kwargs)]  # Left
-    points += [self.create_rectangle(x1 + radius, y1 + radius, x2 - radius, y2 - radius, **kwargs)]  # Center
+    # Create the rounded rectangle as a single smooth polygon
+    return self.create_polygon(points, smooth=True, **kwargs)
 
-    return points  # Returns list of canvas items for further control
-    
 # Add the method to the Canvas class
 tk.Canvas.create_rounded_rect = create_rounded_rect
 
