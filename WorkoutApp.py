@@ -843,6 +843,9 @@ class InjuryRestrictions(tk.Frame):
                 highlightthickness=0  # No highlight
             )
             radio.pack(side="left")
+            
+            # Add click binding to the radio button
+            radio.bind("<Button-1>", lambda e, r=radio: self.on_radio_click(r))
         
         # Create text entry frame (initially hidden)
         self.text_frame = tk.Frame(self.center_frame, bg='#212529')
@@ -858,6 +861,14 @@ class InjuryRestrictions(tk.Frame):
         text_scrollbar = ttk.Scrollbar(self.text_frame, orient="vertical", command=self.text_widget.yview)
         text_scrollbar.pack(side="right", fill="y")
         self.text_widget.configure(yscrollcommand=text_scrollbar.set)
+    
+    def on_radio_click(self, radio):
+        # Set the variable value
+        self.app.injury_var.set(radio["value"])
+        # Call the selection handler
+        self.on_injury_selection()
+        # Update the radio button state
+        radio.select()
     
     def on_injury_selection(self):
         # Only show/hide the text input frame without advancing
