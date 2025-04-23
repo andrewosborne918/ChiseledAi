@@ -18,58 +18,59 @@ from typing import Dict, List, Optional
 
 # Add rounded rectangle method to Canvas class
 def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
-    """Create a rounded rectangle on the canvas."""
+    """Create a rounded rectangle on the canvas with smooth corners."""
     # Ensure radius doesn't exceed half the width or height
     radius = min(radius, abs(x2 - x1) / 2, abs(y2 - y1) / 2)
 
-    # Separate outline and fill parameters
-    outline_color = kwargs.pop('outline', None)
-    fill_color = kwargs.pop('fill', None)
-    width = kwargs.pop('width', 1)
+    # Points for the bezier curve to create rounded corners
+    points = [
+        x1 + radius, y1,                # Top left start
+        x2 - radius, y1,                # Top right start
+        x2, y1,                         # Top right corner control
+        x2, y1 + radius,               # Top right corner end
+        x2, y2 - radius,               # Bottom right start
+        x2, y2,                        # Bottom right corner control
+        x2 - radius, y2,               # Bottom right corner end
+        x1 + radius, y2,               # Bottom left start
+        x1, y2,                        # Bottom left corner control
+        x1, y2 - radius,               # Bottom left corner end
+        x1, y1 + radius,               # Top left start
+        x1, y1,                        # Top left corner control
+        x1 + radius, y1                # Back to start
+    ]
 
-    # Create new kwargs for outline elements
-    outline_kwargs = {'fill': outline_color, 'width': width, **kwargs}
-    # Create new kwargs for filled elements
-    fill_kwargs = {'fill': fill_color, 'outline': '', **kwargs}
+    # If width is specified, create two polygons for outline effect
+    if 'width' in kwargs and kwargs['width'] > 0:
+        width = kwargs.pop('width')
+        outline_color = kwargs.pop('outline', 'black')
+        fill_color = kwargs.pop('fill', '')
+        
+        # Create outer shape (outline)
+        if outline_color:
+            self.create_polygon(points, smooth=True, fill=outline_color, **kwargs)
+        
+        # Adjust points for inner shape
+        if fill_color:
+            inner_points = []
+            for i in range(0, len(points), 2):
+                x, y = points[i], points[i + 1]
+                if x == x1:
+                    x += width
+                elif x == x2:
+                    x -= width
+                if y == y1:
+                    y += width
+                elif y == y2:
+                    y -= width
+                inner_points.extend([x, y])
+            
+            # Create inner shape (fill)
+            self.create_polygon(inner_points, smooth=True, fill=fill_color, outline='', **kwargs)
+    else:
+        # Create single polygon if no width specified
+        return self.create_polygon(points, smooth=True, **kwargs)
 
-    # Draw the main rectangle if fill color is specified
-    if fill_color:
-        self.create_rectangle(x1 + radius, y1,
-                            x2 - radius, y2,
-                            **fill_kwargs)
-        self.create_rectangle(x1, y1 + radius,
-                            x2, y2 - radius,
-                            **fill_kwargs)
-
-        # Draw the four corner arcs with fill
-        self.create_arc(x1, y1, x1 + 2*radius, y1 + 2*radius,
-                       start=90, extent=90, **fill_kwargs)
-        self.create_arc(x2 - 2*radius, y1, x2, y1 + 2*radius,
-                       start=0, extent=90, **fill_kwargs)
-        self.create_arc(x1, y2 - 2*radius, x1 + 2*radius, y2,
-                       start=180, extent=90, **fill_kwargs)
-        self.create_arc(x2 - 2*radius, y2 - 2*radius, x2, y2,
-                       start=270, extent=90, **fill_kwargs)
-
-    # Draw the outline if specified
-    if outline_color:
-        # Draw the four sides
-        self.create_line(x1 + radius, y1, x2 - radius, y1, **outline_kwargs)  # Top
-        self.create_line(x2, y1 + radius, x2, y2 - radius, **outline_kwargs)  # Right
-        self.create_line(x1 + radius, y2, x2 - radius, y2, **outline_kwargs)  # Bottom
-        self.create_line(x1, y1 + radius, x1, y2 - radius, **outline_kwargs)  # Left
-
-        # Draw the four corner arcs
-        self.create_arc(x1, y1, x1 + 2*radius, y1 + 2*radius,
-                       start=90, extent=90, **outline_kwargs)
-        self.create_arc(x2 - 2*radius, y1, x2, y1 + 2*radius,
-                       start=0, extent=90, **outline_kwargs)
-        self.create_arc(x1, y2 - 2*radius, x1 + 2*radius, y2,
-                       start=180, extent=90, **outline_kwargs)
-        self.create_arc(x2 - 2*radius, y2 - 2*radius, x2, y2,
-                       start=270, extent=90, **outline_kwargs)
-
-    return self.find_all()[-1]  # Return the last created item
+    return self.find_all()[-1]
 
 # Add the method to the Canvas class
 tk.Canvas.create_rounded_rect = create_rounded_rect
