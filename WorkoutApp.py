@@ -1004,10 +1004,12 @@ class WorkoutPlanPage(tk.Frame):
             outline=''
         )
 
-        # Reset and start progress animation
+        # Reset and start progress animation immediately
         self.progress_value = 0
         self.is_generating = True
         self.animate_progress()
+        # Force an immediate update
+        self.update_idletasks()
 
     def animate_progress(self):
         """Animate the progress bar"""
@@ -1015,7 +1017,7 @@ class WorkoutPlanPage(tk.Frame):
             return
 
         # Update progress bar
-        self.progress_value += 0.5
+        self.progress_value += 1  # Increased speed
         if self.progress_value > 100:
             self.progress_value = 0
 
@@ -1030,8 +1032,8 @@ class WorkoutPlanPage(tk.Frame):
             outline=''
         )
 
-        # Continue animation
-        self.after(50, self.animate_progress)
+        # Continue animation with faster updates
+        self.after(30, self.animate_progress)  # Decreased delay for smoother animation
 
     def generate_and_display_plan(self, responses):
         """Generate the plan and update the display with progress bar"""
@@ -1559,31 +1561,15 @@ class ExerciseInstructionPopup(tk.Toplevel):
         self.text_widget.configure(yscrollcommand=scrollbar.set)
 
         # Configure text tags for formatting
-        self.text_widget.tag_configure("section_header", 
+        self.text_widget.tag_configure("header", 
                                      font=("Helvetica", 16, "bold"), 
                                      foreground="#eb5e28")
-        self.text_widget.tag_configure("subsection_header", 
-                                     font=("Helvetica", 14, "bold"), 
-                                     foreground="#eb5e28",
-                                     lmargin1=20,
-                                     lmargin2=20)
-        self.text_widget.tag_configure("bullet", 
-                                     lmargin1=40, 
-                                     lmargin2=60)
         self.text_widget.tag_configure("normal", 
                                      font=("Helvetica", 14),
-                                     lmargin1=20,
-                                     lmargin2=20)
-        self.text_widget.tag_configure("subnormal", 
-                                     font=("Helvetica", 14),
-                                     lmargin1=40,
-                                     lmargin2=40)
+                                     foreground="white")
 
         # Process and insert the instructions with formatting
         sections = instructions.split('\n')
-        in_subsection = False
-        current_section = None
-        
         for section in sections:
             section = section.strip()
             if not section:
@@ -1599,33 +1585,10 @@ class ExerciseInstructionPopup(tk.Toplevel):
             
             if section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')):
                 # Main section headers
-                current_section = section.split('.')[0]
-                parts = section.split(':', 1)
-                if len(parts) == 2:
-                    self.text_widget.insert("end", f"{parts[0]}:\n", "section_header")
-                    if parts[1].strip():
-                        self.text_widget.insert("end", f"{parts[1].strip()}\n", "normal")
-                else:
-                    self.text_widget.insert("end", f"{section}\n", "section_header")
-                in_subsection = False
-            elif section.startswith(('-', '•')):
-                # Bullet points - determine if it's a main bullet or sub-bullet
-                text = section.lstrip('-').lstrip('•').strip()
-                if in_subsection:
-                    # Add extra indentation for bullets within subsections
-                    self.text_widget.insert("end", "  • " + text + "\n", "bullet")
-                else:
-                    self.text_widget.insert("end", "• " + text + "\n", "bullet")
-            elif ':' in section and not section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')):
-                # Subsection headers (like "Starting Position:", "Form:", etc.)
-                in_subsection = True
-                self.text_widget.insert("end", section + "\n", "subsection_header")
+                self.text_widget.insert("end", f"{section}\n", "header")
             else:
-                # Normal text - use appropriate indentation based on context
-                if in_subsection:
-                    self.text_widget.insert("end", section + "\n", "subnormal")
-                else:
-                    self.text_widget.insert("end", section + "\n", "normal")
+                # All other text as normal paragraphs
+                self.text_widget.insert("end", f"{section}\n", "normal")
 
         # Make text widget read-only
         self.text_widget.config(state="disabled")
