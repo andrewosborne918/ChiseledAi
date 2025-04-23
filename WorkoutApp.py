@@ -849,65 +849,33 @@ class InjuryRestrictions(tk.Frame):
                                        wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
 
-        # Create a frame for radio buttons with specific spacing
+        # Create a frame for radio buttons
         self.radio_frame = tk.Frame(self.center_frame, bg='#212529')
         self.radio_frame.pack(fill="x", pady=10)
 
-        # Create radio buttons with custom appearance
+        # Create radio buttons with custom styling
+        style = ttk.Style()
+        style.configure("Custom.TRadiobutton",
+                      background='#212529',
+                      foreground='white',
+                      font=("Helvetica", 14))
+        
+        # Configure radio button colors
+        style.map("Custom.TRadiobutton",
+                 background=[('active', '#212529')],
+                 foreground=[('active', '#eb5e28')])
+
+        # Create radio buttons
         for option in ["No", "Yes"]:
-            # Create a canvas for each radio button
-            radio_canvas = tk.Canvas(self.radio_frame, width=120, height=40,
-                                   bg='#212529', highlightthickness=0)
-            radio_canvas.pack(side="left", padx=10)
-
-            # Draw rounded rectangle background
-            radio_canvas.create_rounded_rect(0, 0, 120, 40, 8,
-                                          fill='', outline='#eb5e28')
-
-            # Create the label
-            radio_label = tk.Label(radio_canvas, text=option,
-                                 font=("Helvetica", 14),
-                                 bg='#212529', fg='white',
-                                 cursor="hand2")
-            radio_label.place(relx=0.5, rely=0.5, anchor="center")
-
-            # Store canvas and label references
-            setattr(self, f"{option.lower()}_canvas", radio_canvas)
-            setattr(self, f"{option.lower()}_label", radio_label)
-
-            # Create click handlers
-            def make_handler(value):
-                def handler(event):
-                    self.app.injury_var.set(value)
-                    self.update_radio_states()
-                    self.on_injury_selection()
-                return handler
-
-            # Bind click events
-            radio_canvas.bind("<Button-1>", make_handler(option))
-            radio_label.bind("<Button-1>", make_handler(option))
-
-            # Add hover effects
-            def make_hover_handlers(canvas, label):
-                def on_enter(e):
-                    if self.app.injury_var.get() != label.cget("text"):
-                        canvas.delete("all")
-                        canvas.create_rounded_rect(0, 0, 120, 40, 8,
-                                                fill='#2b3035', outline='#eb5e28')
-
-                def on_leave(e):
-                    if self.app.injury_var.get() != label.cget("text"):
-                        canvas.delete("all")
-                        canvas.create_rounded_rect(0, 0, 120, 40, 8,
-                                                fill='', outline='#eb5e28')
-
-                return on_enter, on_leave
-
-            on_enter, on_leave = make_hover_handlers(radio_canvas, radio_label)
-            radio_canvas.bind("<Enter>", on_enter)
-            radio_label.bind("<Enter>", on_enter)
-            radio_canvas.bind("<Leave>", on_leave)
-            radio_label.bind("<Leave>", on_leave)
+            radio = ttk.Radiobutton(
+                self.radio_frame,
+                text=option,
+                value=option,
+                variable=app.injury_var,
+                style="Custom.TRadiobutton",
+                command=self.on_injury_selection
+            )
+            radio.pack(side="left", padx=20, pady=5)
 
         # Create text entry frame (initially hidden)
         self.text_frame = tk.Frame(self.center_frame, bg='#212529')
@@ -926,26 +894,6 @@ class InjuryRestrictions(tk.Frame):
         text_scrollbar.pack(side="right", fill="y")
         self.text_widget.configure(yscrollcommand=text_scrollbar.set)
 
-    def update_radio_states(self):
-        """Update the visual state of radio buttons based on selection"""
-        selected = self.app.injury_var.get()
-        
-        for option in ["No", "Yes"]:
-            canvas = getattr(self, f"{option.lower()}_canvas")
-            label = getattr(self, f"{option.lower()}_label")
-            
-            canvas.delete("all")
-            if selected == option:
-                # Selected state
-                canvas.create_rounded_rect(0, 0, 120, 40, 8,
-                                        fill='#eb5e28', outline='#eb5e28')
-                label.configure(bg='#eb5e28')
-            else:
-                # Unselected state
-                canvas.create_rounded_rect(0, 0, 120, 40, 8,
-                                        fill='', outline='#eb5e28')
-                label.configure(bg='#212529')
-
     def on_injury_selection(self):
         """Handle injury selection changes"""
         if self.app.injury_var.get() == "Yes":
@@ -955,6 +903,11 @@ class InjuryRestrictions(tk.Frame):
 
     def update_numbering(self, number):
         self.question_label.config(text=f"{number}. Any injuries/restrictions?")
+
+    def collect_injury_info(self):
+        if self.app.injury_var.get() == "Yes":
+            return self.text_widget.get("1.0", "end-1c").strip()
+        return None
 
 
 class WorkoutStyle(tk.Frame):
