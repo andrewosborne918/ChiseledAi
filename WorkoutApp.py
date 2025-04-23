@@ -986,9 +986,13 @@ class WorkoutPlanPage(tk.Frame):
         self.display_workout_plan(responses, is_saved_plan=True)
     
     def display_workout_plan(self, responses, is_saved_plan=False):
-        # Clear any existing plan display
+        # Clear any existing plan display and buttons
         for widget in self.plan_container.winfo_children():
             widget.destroy()
+        
+        # Clear any existing buttons
+        if hasattr(self, 'button_container'):
+            self.button_container.destroy()
         
         # Create a text widget for the workout plan
         self.plan_text = tk.Text(self.plan_container, wrap=tk.WORD, bg='#212529', fg='white',
