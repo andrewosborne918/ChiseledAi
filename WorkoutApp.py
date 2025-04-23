@@ -1247,11 +1247,12 @@ Formatting Guidelines:
 2. Make the title of the workout an H1 (use #)
 3. Make the different workout block headers an H2 (use ##)
 4. For each exercise:
-   - Use clear, common exercise names
-   - Include sets, reps, rest time, and important notes
+   - Put the exercise name in square brackets [Exercise Name]
+   - Include sets, reps, rest time, and important notes after the exercise name
+   - Use bullet points (-) for sets, reps, and notes
 5. Use clear spacing between sections and exercises
 
-Format the plan in a clear, easy-to-follow structure."""
+Format the plan in a clear, easy-to-follow structure with each exercise name in [brackets]."""
 
         try:
             # Generate the workout plan using Gemini
@@ -1268,7 +1269,6 @@ Format the plan in a clear, easy-to-follow structure."""
             # Process the plan to identify exercises and get their instructions
             lines = plan_text.split('\n')
             processed_lines = []
-            in_exercise_section = False
             exercise_instructions = {}
             
             for line in lines:
@@ -1278,20 +1278,16 @@ Format the plan in a clear, easy-to-follow structure."""
                 if not line:
                     processed_lines.append(line)
                     continue
-                
-                # Check if we're in a workout section
-                if line.startswith('##'):
-                    in_exercise_section = "Warm-up" in line or "Main Workout" in line or "Cool-down" in line
-                    processed_lines.append(line)
-                    continue
-                
-                # Process potential exercise names
-                if in_exercise_section and not any(line.startswith(x) for x in ['#', '-', '[', '•']) and ':' not in line and len(line.split()) <= 4:
-                    # This is likely an exercise name
-                    exercise_name = line
-                    
-                    # Generate instructions for this exercise
-                    instruction_prompt = f"""Provide detailed instructions for the exercise: {exercise_name}
+
+                # Check for exercise names in square brackets
+                if '[' in line and ']' in line:
+                    start = line.find('[')
+                    end = line.find(']')
+                    if start < end:
+                        exercise_name = line[start + 1:end]
+                        
+                        # Generate instructions for this exercise
+                        instruction_prompt = f"""Provide detailed instructions for the exercise: {exercise_name}
 
 Please include:
 1. Starting position
@@ -1303,23 +1299,20 @@ Please include:
 
 Keep the instructions clear and concise, focusing on proper form and safety."""
 
-                    try:
-                        instruction_response = model.generate_content(instruction_prompt)
-                        if instruction_response and instruction_response.text:
-                            exercise_instructions[exercise_name] = instruction_response.text.strip()
-                            logging.info(f"Generated instructions for {exercise_name}")
-                        else:
+                        try:
+                            instruction_response = model.generate_content(instruction_prompt)
+                            if instruction_response and instruction_response.text:
+                                exercise_instructions[exercise_name] = instruction_response.text.strip()
+                                logging.info(f"Generated instructions for {exercise_name}")
+                            else:
+                                exercise_instructions[exercise_name] = "Instructions not available."
+                                logging.warning(f"No instructions generated for {exercise_name}")
+                        except Exception as e:
                             exercise_instructions[exercise_name] = "Instructions not available."
-                            logging.warning(f"No instructions generated for {exercise_name}")
-                    except Exception as e:
-                        exercise_instructions[exercise_name] = "Instructions not available."
-                        logging.error(f"Error generating instructions for {exercise_name}: {e}")
+                            logging.error(f"Error generating instructions for {exercise_name}: {e}")
 
-                    # Add the exercise name as a clickable element
-                    processed_lines.append(f"[{exercise_name}]")
-                else:
-                    # Not an exercise name, add as is
-                    processed_lines.append(line)
+                # Add the line as is
+                processed_lines.append(line)
 
             # Store the exercise instructions in the responses dictionary
             responses['exercise_instructions'] = exercise_instructions
