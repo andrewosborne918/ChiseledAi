@@ -550,17 +550,17 @@ class WorkoutApp(tk.Tk):
             self.update_idletasks()
 
     def collect_responses(self):
+        # Set default values for empty responses
         responses = {
-            "Workout Focus": self.focus_var.get(),
-            "Muscle Groups": [group for group, var in self.muscle_vars.items() if
-                              var.get()] if self.focus_var.get() == "Target muscle group" else None,
-            "Goal": self.goal_var.get(),
-            "Experience": self.experience_var.get(),
-            "Equipment": self.equipment_section.collect_equipment_info(),
-            "Duration": self.duration_var.get(),
-            "Location": self.location_var.get(),
-            "Injuries": self.injury_section.collect_injury_info(),
-            "Workout Style": self.style_var.get(),
+            "Workout Focus": self.focus_var.get() or "Full body",
+            "Muscle Groups": [group for group, var in self.muscle_vars.items() if var.get()] if self.focus_var.get() == "Target muscle group" else None,
+            "Goal": self.goal_var.get() or "General fitness",
+            "Experience": self.experience_var.get() or "Beginner",
+            "Equipment": self.equipment_section.collect_equipment_info() or ["Bodyweight only"],
+            "Duration": self.duration_var.get() or "60 minutes",
+            "Location": self.location_var.get() or "Home",
+            "Injuries": self.injury_section.collect_injury_info() or None,
+            "Workout Style": self.style_var.get() or "Traditional sets"
         }
 
         # Save the workout plan
@@ -904,7 +904,7 @@ class WorkoutStyle(tk.Frame):
                                        wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
         dropdown = ttk.Combobox(self.center_frame, textvariable=app.style_var,
-                                values=["Circuit", "Supersets", "Traditional sets", "HIIT", "Yoga/Pilates",
+                                values=["Traditional sets", "Supersets", "Circuit", "HIIT", "Yoga/Pilates",
                                         "Stretching/Mobility"])
         dropdown.pack(fill="x", pady=5)
         # Remove automatic advancement
