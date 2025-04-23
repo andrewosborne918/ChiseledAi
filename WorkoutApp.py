@@ -52,10 +52,17 @@ class ExerciseDatabase:
 
     def _validate_database(self):
         """Validate that the database has the required columns"""
-        required_columns = ['exercise_name', 'difficulty', 'muscle_group', 'video_url', 'equipment']
+        required_columns = ['exercise_name', 'difficulty', 'muscle_group', 'video_url']
         missing_columns = [col for col in required_columns if col not in self.df.columns]
         if missing_columns:
-            raise ValueError(f"Missing required columns in exercise database: {missing_columns}")
+            logging.warning(f"Missing columns in exercise database: {missing_columns}")
+            # Add missing columns with default values
+            for col in missing_columns:
+                if col == 'video_url':
+                    self.df[col] = None
+                else:
+                    self.df[col] = 'Unknown'
+            logging.info("Added default values for missing columns")
 
     def get_exercises_by_muscle_group(self, muscle_group: str) -> List[Dict]:
         """Get all exercises for a specific muscle group"""
@@ -67,7 +74,11 @@ class ExerciseDatabase:
 
     def get_exercises_by_equipment(self, equipment: str) -> List[Dict]:
         """Get all exercises that can be done with specific equipment"""
-        return self.df[self.df['equipment'] == equipment].to_dict('records')
+        if 'equipment' in self.df.columns:
+            return self.df[self.df['equipment'] == equipment].to_dict('records')
+        else:
+            logging.warning("Equipment column not found, returning all exercises")
+            return self.df.to_dict('records')
 
     def get_exercise(self, exercise_name: str) -> Optional[Dict]:
         """Get a specific exercise by name"""
@@ -91,7 +102,7 @@ class ExerciseDatabase:
             filtered_df = filtered_df[filtered_df['muscle_group'] == muscle_group]
         if difficulty:
             filtered_df = filtered_df[filtered_df['difficulty'] == difficulty]
-        if equipment:
+        if equipment and 'equipment' in self.df.columns:
             filtered_df = filtered_df[filtered_df['equipment'] == equipment]
         return filtered_df.to_dict('records')
 
@@ -1177,6 +1188,24 @@ class WorkoutPlanPage(tk.Frame):
         )
         self.new_plan_label.place(relx=0.5, rely=0.5, anchor='center')
         self.new_plan_label.bind("<Button-1>", lambda e: self.start_new_plan())
+
+    def create_rounded_rect(self, canvas, x1, y1, x2, y2, radius, **kwargs):
+        """Create a rounded rectangle on the canvas"""
+        points = [
+            x1+radius, y1,
+            x2-radius, y1,
+            x2, y1,
+            x2, y1+radius,
+            x2, y2-radius,
+            x2, y2,
+            x2-radius, y2,
+            x1+radius, y2,
+            x1, y2,
+            x1, y2-radius,
+            x1, y1+radius,
+            x1, y1,
+        ]
+        return canvas.create_polygon(points, smooth=True, **kwargs)
 
     def refresh_plan(self, responses):
         """Generate a new workout plan with the same preferences"""
