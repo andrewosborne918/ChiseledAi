@@ -179,7 +179,7 @@ class WorkoutApp(tk.Tk):
         self.saved_plan = self.load_saved_plan()
 
         # Schedule the main form or saved plan to appear after 3 seconds
-        self.after(3000, self.show_initial_screen)
+        self.after(2000, self.show_initial_screen)
 
     def get_data_directory(self):
         """Get the appropriate data directory based on the platform."""
