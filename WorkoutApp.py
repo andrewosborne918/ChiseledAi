@@ -615,19 +615,47 @@ class WorkoutFocus(tk.Frame):
         self.dropdown.bind("<Button-1>", lambda e: self.dropdown.focus_set() or self.dropdown.event_generate('<Down>'))
 
         # Muscle group checkboxes (initially hidden)
-        self.muscle_groups = ["Chest", "Back", "Legs", "Arms", "Shoulders", "Core", "Glutes"]
+        body_parts = {
+            "Upper Body": [
+                "Chest",
+                "Back",
+                "Shoulders",
+                "Biceps",
+                "Triceps",
+                "Forearms"
+            ],
+            "Lower Body": [
+                "Glutes",
+                "Quads",
+                "Hamstrings",
+                "Calves",
+                "Hip Flexors"
+            ],
+            "Core / Midsection": [
+                "Upper Abs",
+                "Lower Abs",
+                "Obliques",
+                "Lower Back",
+                "Transverse Abdominis"
+            ]
+        }
         self.muscle_frame = tk.Frame(self.center_frame, bg='#212529')
-        self.checkbox_frame = tk.Frame(self.muscle_frame, bg='#212529')
-        self.checkbox_frame.pack(fill="x", pady=5)
         self.muscle_label = tk.Label(self.muscle_frame, text="Which muscle groups?",
                  font=("Helvetica", 14, "bold"), bg='#212529', fg='white', wraplength=400)
         self.muscle_label.pack(anchor="w", pady=5)
-        for group in self.muscle_groups:
-            var = tk.BooleanVar()
-            self.app.muscle_vars[group] = var
-            tk.Checkbutton(self.checkbox_frame, text=group, variable=var,
-                           command=lambda: None, font=("Helvetica", 12),
-                           bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
+        # For each group, add a label and checkboxes
+        for group_name, muscles in body_parts.items():
+            group_label = tk.Label(self.muscle_frame, text=group_name,
+                                   font=("Helvetica", 13, "bold"), bg='#212529', fg='#eb5e28', wraplength=400)
+            group_label.pack(anchor="w", pady=(10, 2))
+            group_checkbox_frame = tk.Frame(self.muscle_frame, bg='#212529')
+            group_checkbox_frame.pack(fill="x", padx=10)
+            for muscle in muscles:
+                var = tk.BooleanVar()
+                self.app.muscle_vars[muscle] = var
+                tk.Checkbutton(group_checkbox_frame, text=muscle, variable=var,
+                               command=lambda: None, font=("Helvetica", 12),
+                               bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
 
     def on_focus_change(self, event=None):
         if self.app.focus_var.get() == "Target muscle group":
