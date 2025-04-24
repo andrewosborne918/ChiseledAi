@@ -1047,57 +1047,58 @@ class WorkoutPlanPage(tk.Frame):
         self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
         self.loading_frame.pack(fill="both", expand=True)
 
-        # Get current window width for responsive sizing
+        # Define font and wraplength variables for loading screen
         width = self.app.winfo_width() if hasattr(self.app, 'winfo_width') else 800
         is_small = width < 500
-        # Responsive font sizes and dimensions
         title_font = ("Impact", 32) if is_small else ("Impact", 50)
-        subtitle_font = ("Helvetica", 12) if is_small else ("Helvetica", 14)
-        progress_width = 200 if is_small else 300
-        progress_height = 16 if is_small else 20
-        bar_radius = 7 if is_small else 10
-        bar_inner_radius = 6 if is_small else 9
-        sentence_font = ("Helvetica", 10, "italic") if is_small else ("Helvetica", 13, "italic")
         wraplength = 220 if is_small else 400
-        pady_logo = (0, 0)
-        pady_sentence = (0, 0)
 
-        # Create a container to center the content vertically
-        center_container = tk.Frame(self.loading_frame, bg='#212529', padx=0, pady=0)
-        center_container.place(relx=0.5, rely=0.4, anchor="center")
+        # Use pack with fill and expand for all containers
+        center_container = tk.Frame(self.loading_frame, bg='#212529')
+        center_container.pack(fill="both", expand=True)
 
         # Title
-        self.loading_title_label = tk.Label(center_container, text="CHISELED AI", font=title_font, bg='#212529', fg='#eb5e28', wraplength=wraplength, justify="center")
+        self.loading_title_label = tk.Label(center_container, text="CHISELED AI", font=title_font, bg='#212529', fg='#eb5e28', wraplength=wraplength, justify="left", anchor="w")
+        self.loading_title_label.pack(fill="x")
         self.loading_label = tk.Label(
             center_container,
             text="Generating your personalized workout plan...",
             font=("Helvetica", 16),
             bg='#212529',
-            fg='white'
+            fg='white',
+            justify="left",
+            anchor="w"
         )
-        self.loading_label.pack(pady=(0, 0))
+        self.loading_label.pack(fill="x")
 
         # Create progress bar container
-        progress_container = tk.Frame(center_container, bg='#212529', padx=0, pady=0)
-        progress_container.pack(fill="x", padx=0, pady=0)
+        progress_container = tk.Frame(center_container, bg='#212529')
+        progress_container.pack(fill="x")
 
-        # Create progress bar using Canvas
+        # Create progress bar using Canvas, dynamic width
+        progress_width = center_container.winfo_width() if center_container.winfo_width() > 0 else 300
         self.progress_canvas = tk.Canvas(
             progress_container,
-            width=300,
             height=20,
             bg='#212529',
             highlightthickness=0
         )
-        self.progress_canvas.pack(pady=0)
+        self.progress_canvas.pack(fill="x")
 
-        # Draw progress bar background
-        self.progress_canvas.create_rounded_rect(
-            0, 0, 300, 20, 10,
-            fill='#2b3035',
-            outline='#eb5e28',
-            width=2
-        )
+        def update_progress_bar_width(event=None):
+            width = progress_container.winfo_width()
+            if width < 100:
+                width = 100
+            self.progress_canvas.config(width=width)
+            self.progress_canvas.delete("all")
+            self.progress_canvas.create_rounded_rect(
+                0, 0, width, 20, 10,
+                fill='#2b3035',
+                outline='#eb5e28',
+                width=2
+            )
+        progress_container.bind("<Configure>", update_progress_bar_width)
+        update_progress_bar_width()
 
         # Initialize progress variables
         self.progress_value = 0
@@ -1108,19 +1109,16 @@ class WorkoutPlanPage(tk.Frame):
         self.update_progress_bar()
 
         # Add the sentence label below the progress bar
-        self.loading_sentence_label = tk.Label(center_container, text="", font=("Helvetica", 13, "italic"), bg='#212529', fg='#eb5e28', wraplength=400, justify="center")
-        self.loading_sentence_label.pack(pady=(0, 0), fill="x")
+        self.loading_sentence_label = tk.Label(center_container, text="", font=("Helvetica", 13, "italic"), bg='#212529', fg='#eb5e28', wraplength=400, justify="left", anchor="w")
+        self.loading_sentence_label.pack(fill="x")
 
         def update_sentence_wrap(event=None):
-            # Set wraplength to the width of the center_container minus some padding
             width = center_container.winfo_width()
             if width > 40:
                 self.loading_sentence_label.config(wraplength=width - 40)
             else:
                 self.loading_sentence_label.config(wraplength=width)
-
         center_container.bind("<Configure>", update_sentence_wrap)
-        # Call once to set initial wraplength
         update_sentence_wrap()
 
         # Prepare a shuffled list of indices for random, non-repeating order
