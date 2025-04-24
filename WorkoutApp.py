@@ -1106,7 +1106,7 @@ class WorkoutPlanPage(tk.Frame):
 
         def update_sentence_wrap(event=None):
             width = center_container.winfo_width()
-            wrap = min(max(400, width - 60), 700)
+            wrap = max(200, width - 60)
             self.loading_sentence_label.config(wraplength=wrap)
         center_container.bind("<Configure>", update_sentence_wrap)
         update_sentence_wrap()
