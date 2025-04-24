@@ -1011,21 +1011,63 @@ class WorkoutPlanPage(tk.Frame):
             "Unpacking your digital dumbbells...",
             "Negotiating a truce between cardio and strength training.",
             "Locating the motivation you lost last weekend.",
-            "Giving your goals a motivational pep talk."
+            "Giving your goals a motivational pep talk.",
+            "Sifting through thousands of burpees to find the perfect one for you...",
+            "Politely asking your muscles to rise and shine.",
+            "Debating whether or not to include mountain climbers.",
+            "Disabling the ‘skip leg day’ button. For your own good.",
+            "Translating sweat into results...",
+            "Slapping high-fives to imaginary gym buddies.",
+            "Fetching water bottles and good intentions…",
+            "Making your workout slightly more painful than yesterday.",
+            "We asked your abs to show up. They ghosted us.",
+            "Injecting just enough pain to make you proud later.",
+            "Warning: Your glutes are about to file a complaint.",
+            "Your personal trainer is buffering…",
+            "Teaching your biceps the meaning of life.",
+            "Running with dumbbells… slowly… virtually.",
+            "Bringing the heat. Also the sweat.",
+            "Building a better body—one loading bar at a time.",
+            "Programming soreness into your future.",
+            "Scouting the internet for motivational quotes… and snacks.",
+            "Looking for lost gains… please wait.",
+            "Putting the ‘ow’ in ‘workout.’",
+            "Downloading gym grunts and beast mode.",
+            "Powerlifting your routine into existence.",
+            "Calculating the precise moment you’ll start questioning your life choices.",
+            "Just one more second… and then another rep.",
+            "Your future self is cheering. We’re just stalling for dramatic effect."
         ]
         self.loading_sentence_indices = []
         self.loading_sentence_label = None
 
     def show_loading_screen(self):
-        """Show the loading screen with progress bar and motivational sentences"""
+        """Show the loading screen with progress bar and motivational sentences, responsive for small screens."""
         # Show loading frame only for new plans
         self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
         self.loading_frame.pack(fill="both", expand=True)
+
+        # Get current window width for responsive sizing
+        width = self.app.winfo_width() if hasattr(self.app, 'winfo_width') else 800
+        is_small = width < 500
+        # Responsive font sizes and dimensions
+        title_font = ("Impact", 32) if is_small else ("Impact", 50)
+        subtitle_font = ("Helvetica", 12) if is_small else ("Helvetica", 14)
+        progress_width = 200 if is_small else 300
+        progress_height = 16 if is_small else 20
+        bar_radius = 7 if is_small else 10
+        bar_inner_radius = 6 if is_small else 9
+        sentence_font = ("Helvetica", 10, "italic") if is_small else ("Helvetica", 13, "italic")
+        wraplength = 220 if is_small else 400
+        pady_logo = (10, 10) if is_small else (0, 20)
+        pady_sentence = (6, 0) if is_small else (10, 0)
 
         # Create a container to center the content vertically
         center_container = tk.Frame(self.loading_frame, bg='#212529')
         center_container.place(relx=0.5, rely=0.4, anchor="center")
 
+        # Title
+        self.loading_title_label = tk.Label(center_container, text="CHISELED AI", font=title_font, bg='#212529', fg='#eb5e28', wraplength=wraplength, justify="center")
         self.loading_label = tk.Label(
             center_container,
             text="Generating your personalized workout plan...",
