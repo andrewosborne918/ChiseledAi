@@ -966,16 +966,7 @@ class WorkoutPlanPage(tk.Frame):
         center_container = tk.Frame(self.loading_frame, bg='#212529')
         center_container.place(relx=0.5, rely=0.4, anchor="center")
 
-        self.loading_label = tk.Label(
-            center_container,
-            text="Generating your personalized workout plan...",
-            font=("Helvetica", 16),
-            bg='#212529',
-            fg='white'
-        )
-        self.loading_label.pack(pady=(0, 20))
-
-        # Create progress bar container
+        # Create progress bar container first
         progress_container = tk.Frame(center_container, bg='#212529')
         progress_container.pack(fill="x", padx=20)
 
@@ -1009,11 +1000,18 @@ class WorkoutPlanPage(tk.Frame):
         self.start_time = time.time()
         self.is_generating = True
         
-        # Force an immediate update
-        self.update_idletasks()
-        
         # Start the animation immediately
         self.animate_progress()
+
+        # Add loading label after progress bar is set up
+        self.loading_label = tk.Label(
+            center_container,
+            text="Generating your personalized workout plan...",
+            font=("Helvetica", 16),
+            bg='#212529',
+            fg='white'
+        )
+        self.loading_label.pack(pady=(20, 0))
 
     def animate_progress(self):
         """Animate the progress bar based on elapsed time"""
@@ -1583,17 +1581,29 @@ class ExerciseInstructionPopup(tk.Toplevel):
         self.text_widget.tag_configure("normal", 
                                      font=("Helvetica", 14),
                                      foreground="white")
+        self.text_widget.tag_configure("bullet", 
+                                     font=("Helvetica", 14),
+                                     foreground="white",
+                                     lmargin1=0,
+                                     lmargin2=0)
 
         # Process and insert the instructions with formatting
         sections = instructions.split('\n')
         current_section = []
+        first_section = True
         
         for section in sections:
             section = section.strip()
             if not section:
                 if current_section:
                     # Insert accumulated section
-                    self.text_widget.insert("end", "\n".join(current_section) + "\n\n", "normal")
+                    if first_section:
+                        self.text_widget.insert("end", "\n".join(current_section) + "\n\n", "normal")
+                        first_section = False
+                    else:
+                        for line in current_section:
+                            self.text_widget.insert("end", "• " + line + "\n", "bullet")
+                        self.text_widget.insert("end", "\n")
                     current_section = []
                 continue
 
@@ -1608,7 +1618,13 @@ class ExerciseInstructionPopup(tk.Toplevel):
             if section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')):
                 # If we have accumulated content, insert it first
                 if current_section:
-                    self.text_widget.insert("end", "\n".join(current_section) + "\n\n", "normal")
+                    if first_section:
+                        self.text_widget.insert("end", "\n".join(current_section) + "\n\n", "normal")
+                        first_section = False
+                    else:
+                        for line in current_section:
+                            self.text_widget.insert("end", "• " + line + "\n", "bullet")
+                        self.text_widget.insert("end", "\n")
                     current_section = []
                 # Insert the header
                 self.text_widget.insert("end", section + "\n\n", "header")
@@ -1618,7 +1634,11 @@ class ExerciseInstructionPopup(tk.Toplevel):
 
         # Insert any remaining content
         if current_section:
-            self.text_widget.insert("end", "\n".join(current_section) + "\n", "normal")
+            if first_section:
+                self.text_widget.insert("end", "\n".join(current_section) + "\n", "normal")
+            else:
+                for line in current_section:
+                    self.text_widget.insert("end", "• " + line + "\n", "bullet")
 
         # Make text widget read-only
         self.text_widget.config(state="disabled")
