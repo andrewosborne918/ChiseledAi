@@ -130,6 +130,11 @@ class WorkoutApp(tk.Tk):
         self.title("Chiseled AI - Workout Planner")
         self.geometry("800x900")
 
+        # Set window size to full screen size
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        self.geometry(f"{screen_width}x{screen_height}")
+
         # Set minimum window size (similar to a phone screen)
         self.minsize(360, 640)
 
