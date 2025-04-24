@@ -1023,8 +1023,11 @@ class WorkoutPlanPage(tk.Frame):
         # Calculate progress based on time (12 seconds to reach 95%)
         elapsed_time = time.time() - self.start_time
         target_progress = min(95, (elapsed_time / 12.0) * 95)
-        self.progress_value = target_progress
-
+        
+        # Smooth the progress update
+        if target_progress > self.progress_value:
+            self.progress_value = min(target_progress, self.progress_value + 1)
+        
         # Calculate width of progress fill
         width = (self.progress_value / 100) * 296
 
@@ -1584,10 +1587,15 @@ class ExerciseInstructionPopup(tk.Toplevel):
 
         # Process and insert the instructions with formatting
         sections = instructions.split('\n')
+        current_section = []
+        
         for section in sections:
             section = section.strip()
             if not section:
-                self.text_widget.insert("end", "\n")
+                if current_section:
+                    # Insert accumulated section
+                    self.text_widget.insert("end", "\n".join(current_section) + "\n\n", "normal")
+                    current_section = []
                 continue
 
             # Remove markdown symbols
@@ -1599,11 +1607,19 @@ class ExerciseInstructionPopup(tk.Toplevel):
             section = section.replace('#', '')
             
             if section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')):
-                # Insert section header
-                self.text_widget.insert("end", f"{section}\n", "header")
+                # If we have accumulated content, insert it first
+                if current_section:
+                    self.text_widget.insert("end", "\n".join(current_section) + "\n\n", "normal")
+                    current_section = []
+                # Insert the header
+                self.text_widget.insert("end", section + "\n", "header")
             else:
-                # Insert normal text
-                self.text_widget.insert("end", f"{section}\n", "normal")
+                # Add to current section
+                current_section.append(section)
+
+        # Insert any remaining content
+        if current_section:
+            self.text_widget.insert("end", "\n".join(current_section) + "\n", "normal")
 
         # Make text widget read-only
         self.text_widget.config(state="disabled")
