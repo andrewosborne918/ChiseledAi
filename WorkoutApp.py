@@ -1234,8 +1234,10 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
                     self.plan_text.tag_configure(tag_name, font=("Helvetica", 14, "bold"), 
                                                foreground="#4dabf7", underline=1)
                     
-                    # Insert the exercise name
+                    # Insert the exercise name and get indices for tagging
+                    start_index = self.plan_text.index("end-1c")
                     self.plan_text.insert("end", exercise_name)
+                    end_index = self.plan_text.index("end-1c")
                     
                     # Apply the tag
                     self.plan_text.tag_add(tag_name, start_index, end_index)
