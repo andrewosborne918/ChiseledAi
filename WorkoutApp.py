@@ -1460,7 +1460,7 @@ Please include:
 5. Form cues
 6. Safety tips
 
-Keep the instructions clear and concise, focusing on proper form and safety."""
+Keep the instructions clear and concise, focusing on proper form and safety. Put this in markdown format"""
 
                         try:
                             instruction_response = model.generate_content(instruction_prompt)
