@@ -1581,15 +1581,27 @@ class ExerciseInstructionPopup(tk.Toplevel):
         # Process and insert the instructions with formatting
         sections = instructions.split('\n')
         intro_lines = []
+        outro_lines = []
         in_intro = True
         in_bullets = False
-        for section in sections:
+        last_heading_index = -1
+        heading_indices = []
+        # First, find all heading indices
+        for idx, section in enumerate(sections):
+            s = section.strip()
+            if s.startswith(('1.', '2.', '3.', '4.', '5.', '6.')) and s.endswith((':', '.')):
+                words = s.split()
+                if len(words) <= 6:
+                    heading_indices.append(idx)
+        # The last heading index
+        if heading_indices:
+            last_heading_index = heading_indices[-1]
+        for idx, section in enumerate(sections):
             section = section.strip()
             if not section:
                 if in_bullets:
                     self.text_widget.insert("end", "\n")
                 continue
-
             # Remove markdown symbols
             section = section.replace('***', '')
             section = section.replace('**', '')
@@ -1597,18 +1609,15 @@ class ExerciseInstructionPopup(tk.Toplevel):
             section = section.replace('###', '')
             section = section.replace('##', '')
             section = section.replace('#', '')
-
             # Detect short numbered headings (max 6 words)
             is_heading = False
             if section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')) and section.endswith((':', '.')):
                 words = section.split()
                 if len(words) <= 6:
                     is_heading = True
-
             if in_intro and not is_heading:
                 intro_lines.append(section)
                 continue
-
             if is_heading:
                 # Print intro text if any
                 if in_intro and intro_lines:
@@ -1618,13 +1627,18 @@ class ExerciseInstructionPopup(tk.Toplevel):
                 in_bullets = True
                 self.text_widget.insert("end", section + "\n", "header")
                 continue
-
+            # If this is after the last heading, treat as outro
+            if last_heading_index != -1 and idx > last_heading_index:
+                outro_lines.append(section)
+                continue
             if in_bullets:
                 self.text_widget.insert("end", "• " + section + "\n", "bullet")
-
         # If only intro text exists
         if in_intro and intro_lines:
             self.text_widget.insert("end", " ".join(intro_lines) + "\n", "normal")
+        # If outro exists, print as normal paragraph
+        if outro_lines:
+            self.text_widget.insert("end", "\n" + " ".join(outro_lines) + "\n", "normal")
 
         # Make text widget read-only
         self.text_widget.config(state="disabled")
