@@ -1008,11 +1008,12 @@ class WorkoutPlanPage(tk.Frame):
         self.progress_value = 0
         self.start_time = time.time()
         self.is_generating = True
-        self.animate_progress()
+        
         # Force an immediate update
         self.update_idletasks()
-        # Start the animation again to ensure it's running
-        self.after(0, self.animate_progress)
+        
+        # Start the animation with a small delay to ensure the UI is ready
+        self.after(50, self.animate_progress)
 
     def animate_progress(self):
         """Animate the progress bar based on elapsed time"""
@@ -1583,20 +1584,13 @@ class ExerciseInstructionPopup(tk.Toplevel):
 
         # Process and insert the instructions with formatting
         sections = instructions.split('\n')
-        bullet_content = []
-        first_heading = True  # Flag to track if the first heading has been added
-        
         for section in sections:
             section = section.strip()
             if not section:
-                # If we have bullet content, insert it
-                if bullet_content:
-                    for bullet in bullet_content:
-                        self.text_widget.insert("end", f"• {bullet}\n", "normal")
-                    bullet_content = []
+                self.text_widget.insert("end", "\n")
                 continue
 
-            # Remove markdown symbols while preserving content
+            # Remove markdown symbols
             section = section.replace('***', '')
             section = section.replace('**', '')
             section = section.replace('*', '')
@@ -1605,30 +1599,11 @@ class ExerciseInstructionPopup(tk.Toplevel):
             section = section.replace('#', '')
             
             if section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')):
-                # If we have bullet content from previous section, insert it
-                if bullet_content:
-                    for bullet in bullet_content:
-                        self.text_widget.insert("end", f"• {bullet}\n", "normal")
-                    bullet_content = []
-                    self.text_widget.insert("end", "\n")
-                
                 # Insert section header
                 self.text_widget.insert("end", f"{section}\n", "header")
-                first_heading = False
             else:
-                # Add content to bullet points
-                if section.strip():
-                    bullet_content.append(section.strip())
-
-        # Insert any remaining bullet content
-        if bullet_content:
-            for bullet in bullet_content:
-                self.text_widget.insert("end", f"• {bullet}\n", "normal")
-
-        # If the last paragraph is not a bullet point, add it without indentation
-        if not first_heading and bullet_content:
-            last_paragraph = bullet_content[-1]
-            self.text_widget.insert("end", f"{last_paragraph}\n", "normal")
+                # Insert normal text
+                self.text_widget.insert("end", f"{section}\n", "normal")
 
         # Make text widget read-only
         self.text_widget.config(state="disabled")
