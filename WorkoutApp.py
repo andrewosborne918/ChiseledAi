@@ -982,7 +982,7 @@ class WorkoutPlanPage(tk.Frame):
 
         # Calculate elapsed time and progress
         elapsed = time.time() - self.start_time
-        self.progress_value = min(95, (elapsed / 90.0) * 95)  # 12 seconds to reach 95%
+        self.progress_value = min(95, (elapsed / 50.0) * 95)  # 12 seconds to reach 95%
         
         # Calculate width of progress fill
         width = (self.progress_value / 100) * 296
