@@ -1577,33 +1577,40 @@ class ExerciseInstructionPopup(tk.Toplevel):
         # Configure text tags for formatting
         self.text_widget.tag_configure("header", 
                                      font=("Helvetica", 16, "bold"), 
-                                     foreground="#eb5e28")
+                                     foreground="#eb5e28",
+                                     spacing1=10,
+                                     spacing3=10)
         self.text_widget.tag_configure("normal", 
                                      font=("Helvetica", 14),
-                                     foreground="white")
+                                     foreground="white",
+                                     spacing1=0,
+                                     spacing2=0,
+                                     spacing3=0,
+                                     lmargin1=0,
+                                     lmargin2=0)
         self.text_widget.tag_configure("bullet", 
                                      font=("Helvetica", 14),
                                      foreground="white",
-                                     lmargin1=0,
-                                     lmargin2=0)
+                                     spacing1=0,
+                                     spacing2=0,
+                                     spacing3=0,
+                                     lmargin1=10,
+                                     lmargin2=25)
 
         # Process and insert the instructions with formatting
         sections = instructions.split('\n')
+        intro_text = []
         current_section = []
-        first_section = True
+        in_intro = True
         
         for section in sections:
             section = section.strip()
             if not section:
-                if current_section:
-                    # Insert accumulated section
-                    if first_section:
-                        self.text_widget.insert("end", "\n".join(current_section) + "\n\n", "normal")
-                        first_section = False
-                    else:
-                        for line in current_section:
-                            self.text_widget.insert("end", "• " + line + "\n", "bullet")
-                        self.text_widget.insert("end", "\n")
+                if current_section and not in_intro:
+                    # Insert accumulated section with bullets
+                    for line in current_section:
+                        self.text_widget.insert("end", "• " + line + "\n", "bullet")
+                    self.text_widget.insert("end", "\n")
                     current_section = []
                 continue
 
@@ -1616,29 +1623,31 @@ class ExerciseInstructionPopup(tk.Toplevel):
             section = section.replace('#', '')
             
             if section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')):
-                # If we have accumulated content, insert it first
+                # If we have intro text, insert it first
+                if intro_text:
+                    self.text_widget.insert("end", "\n".join(intro_text) + "\n\n", "normal")
+                    intro_text = []
+                    in_intro = False
+                # If we have accumulated content, insert it with bullets
                 if current_section:
-                    if first_section:
-                        self.text_widget.insert("end", "\n".join(current_section) + "\n\n", "normal")
-                        first_section = False
-                    else:
-                        for line in current_section:
-                            self.text_widget.insert("end", "• " + line + "\n", "bullet")
-                        self.text_widget.insert("end", "\n")
+                    for line in current_section:
+                        self.text_widget.insert("end", "• " + line + "\n", "bullet")
+                    self.text_widget.insert("end", "\n")
                     current_section = []
                 # Insert the header
-                self.text_widget.insert("end", section + "\n\n", "header")
+                self.text_widget.insert("end", section + "\n", "header")
             else:
-                # Add to current section
-                current_section.append(section)
+                if in_intro:
+                    intro_text.append(section)
+                else:
+                    current_section.append(section)
 
         # Insert any remaining content
+        if intro_text:
+            self.text_widget.insert("end", "\n".join(intro_text) + "\n\n", "normal")
         if current_section:
-            if first_section:
-                self.text_widget.insert("end", "\n".join(current_section) + "\n", "normal")
-            else:
-                for line in current_section:
-                    self.text_widget.insert("end", "• " + line + "\n", "bullet")
+            for line in current_section:
+                self.text_widget.insert("end", "• " + line + "\n", "bullet")
 
         # Make text widget read-only
         self.text_widget.config(state="disabled")
