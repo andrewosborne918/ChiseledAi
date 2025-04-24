@@ -1100,13 +1100,13 @@ class WorkoutPlanPage(tk.Frame):
         update_progress_bar_width()
 
         # Centered loading sentence label
-        self.loading_sentence_label = tk.Label(center_container, text="", font=("Helvetica", 13, "italic"), bg='#212529', fg='#eb5e28', wraplength=400, justify="center", anchor="center")
-        self.loading_sentence_label.pack(pady=(10, 0), anchor="center")
+        self.loading_sentence_label = tk.Label(center_container, text="", font=("Helvetica", 13, "italic"), bg='#212529', fg='#eb5e28', wraplength=400, justify="center")
+        self.loading_sentence_label.pack(pady=(10, 0), fill="x")
 
         def update_sentence_wrap(event=None):
             width = center_container.winfo_width()
-            if width > 40:
-                self.loading_sentence_label.config(wraplength=width - 40)
+            if width > 200:
+                self.loading_sentence_label.config(wraplength=width - 100)
             else:
                 self.loading_sentence_label.config(wraplength=width)
         center_container.bind("<Configure>", update_sentence_wrap)
