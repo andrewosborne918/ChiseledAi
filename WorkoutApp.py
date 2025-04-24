@@ -966,7 +966,16 @@ class WorkoutPlanPage(tk.Frame):
         center_container = tk.Frame(self.loading_frame, bg='#212529')
         center_container.place(relx=0.5, rely=0.4, anchor="center")
 
-        # Create progress bar container first
+        self.loading_label = tk.Label(
+            center_container,
+            text="Generating your personalized workout plan...",
+            font=("Helvetica", 16),
+            bg='#212529',
+            fg='white'
+        )
+        self.loading_label.pack(pady=(0, 20))
+
+        # Create progress bar container
         progress_container = tk.Frame(center_container, bg='#212529')
         progress_container.pack(fill="x", padx=20)
 
@@ -995,36 +1004,27 @@ class WorkoutPlanPage(tk.Frame):
             outline=''
         )
 
-        # Reset and start progress animation immediately
+        # Initialize progress variables
         self.progress_value = 0
-        self.start_time = time.time()
+        self.last_update = time.time()
         self.is_generating = True
-        
-        # Start the animation immediately
-        self.animate_progress()
 
-        # Add loading label after progress bar is set up
-        self.loading_label = tk.Label(
-            center_container,
-            text="Generating your personalized workout plan...",
-            font=("Helvetica", 16),
-            bg='#212529',
-            fg='white'
-        )
-        self.loading_label.pack(pady=(20, 0))
+        # Schedule the first update immediately
+        self.after(0, self.update_progress)
 
-    def animate_progress(self):
-        """Animate the progress bar based on elapsed time"""
+    def update_progress(self):
+        """Update the progress bar animation frame"""
         if not self.is_generating:
             return
 
-        # Calculate progress based on time (12 seconds to reach 95%)
-        elapsed_time = time.time() - self.start_time
-        target_progress = min(95, (elapsed_time / 12.0) * 95)
-        
-        # Update progress value
-        self.progress_value = target_progress
-        
+        current_time = time.time()
+        elapsed = current_time - self.last_update
+        self.last_update = current_time
+
+        # Update progress (aim to complete in about 12 seconds)
+        increment = (elapsed * 95.0) / 12.0  # 95% is the target maximum
+        self.progress_value = min(95, self.progress_value + increment)
+
         # Calculate width of progress fill
         width = (self.progress_value / 100) * 296
 
@@ -1036,9 +1036,9 @@ class WorkoutPlanPage(tk.Frame):
             outline=''
         )
 
-        # Continue animation if not at 95%
+        # Schedule next update
         if self.progress_value < 95:
-            self.after(16, self.animate_progress)  # ~60 FPS update rate
+            self.after(16, self.update_progress)  # ~60 FPS
 
     def generate_and_display_plan(self, responses):
         """Generate the plan and update the display with progress bar"""
