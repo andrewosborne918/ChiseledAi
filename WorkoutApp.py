@@ -15,6 +15,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import pandas as pd
 from typing import Dict, List, Optional
+import threading
 
 # Add rounded rectangle method to Canvas class
 def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
@@ -68,7 +69,7 @@ def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
             self.create_polygon(inner_points, smooth=True, fill=fill_color, outline='', **kwargs)
     else:
         # Create single polygon if no width specified
-    return self.create_polygon(points, smooth=True, **kwargs)
+        return self.create_polygon(points, smooth=True, **kwargs)
 
     return self.find_all()[-1]
 
@@ -98,37 +99,6 @@ if not YOUTUBE_API_KEY:
 model = genai.GenerativeModel('gemini-1.5-flash-latest')
 youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
 
-
-def get_youtube_video(exercise_name):
-    """Return a YouTube search URL for the exercise"""
-    try:
-        # Create a search query
-        search_query = f"{exercise_name} exercise tutorial proper form"
-        
-        # Search YouTube
-        request = youtube.search().list(
-            part="snippet",
-            q=search_query,
-            type="video",
-            maxResults=1
-        )
-        response = request.execute()
-        
-        # Get the first video result
-        if response['items']:
-            video_id = response['items'][0]['id']['videoId']
-            video_url = f"https://www.youtube.com/watch?v={video_id}"
-            logging.info(f"Found YouTube video for {exercise_name}: {video_url}")
-            return video_url, "YouTube"
-        else:
-            # Fallback to search URL if no direct video found
-        search_url = f"https://www.youtube.com/results?search_query={search_query.replace(' ', '+')}"
-        logging.info(f"Using YouTube search URL for {exercise_name}: {search_url}")
-        return search_url, "YouTube Search"
-    except Exception as e:
-        logging.error(f"Error getting video URL for {exercise_name}: {e}")
-        search_url = f"https://www.youtube.com/results?search_query={search_query.replace(' ', '+')}"
-        return search_url, "YouTube Search"
 
 
 def git_sync(commit_message="Auto-sync: Updated workout plan"):
@@ -950,29 +920,29 @@ class WorkoutPlanPage(tk.Frame):
 
         if not is_saved_plan:
             self.show_loading_screen()
-            # Start plan generation
-            self.after(100, lambda: self.generate_and_display_plan(responses))
+            # Start plan generation in a background thread
+            self.after(100, lambda: self.start_plan_generation(responses))
         else:
             # Display saved plan immediately
             self.display_workout_plan(responses, is_saved_plan=True)
 
     def show_loading_screen(self):
         """Show the loading screen with progress bar"""
-            # Show loading frame only for new plans
-            self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
-            self.loading_frame.pack(fill="both", expand=True)
+        # Show loading frame only for new plans
+        self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
+        self.loading_frame.pack(fill="both", expand=True)
 
         # Create a container to center the content vertically
         center_container = tk.Frame(self.loading_frame, bg='#212529')
         center_container.place(relx=0.5, rely=0.4, anchor="center")
 
-            self.loading_label = tk.Label(
+        self.loading_label = tk.Label(
             center_container,
-                text="Generating your personalized workout plan...",
-                font=("Helvetica", 16),
-                bg='#212529',
-                fg='white'
-            )
+            text="Generating your personalized workout plan...",
+            font=("Helvetica", 16),
+            bg='#212529',
+            fg='white'
+        )
         self.loading_label.pack(pady=(0, 20))
 
         # Create progress bar container
@@ -984,7 +954,7 @@ class WorkoutPlanPage(tk.Frame):
             progress_container,
             width=300,
             height=20,
-                bg='#212529',
+            bg='#212529',
             highlightthickness=0
         )
         self.progress_canvas.pack(pady=10)
@@ -1004,7 +974,7 @@ class WorkoutPlanPage(tk.Frame):
 
         # Start updating progress immediately
         self.update_progress_bar()
-        
+
     def update_progress_bar(self):
         """Update the progress bar continuously"""
         if not self.is_generating:
@@ -1029,6 +999,9 @@ class WorkoutPlanPage(tk.Frame):
         # Continue updating if not at 95%
         if self.progress_value < 95:
             self.after(16, self.update_progress_bar)  # Update at ~60 FPS
+
+    def start_plan_generation(self, responses):
+        threading.Thread(target=self.generate_and_display_plan, args=(responses,), daemon=True).start()
 
     def generate_and_display_plan(self, responses):
         """Generate the plan and update the display with progress bar"""
@@ -1122,13 +1095,13 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
             # Store the exercise instructions in the responses dictionary
             responses['exercise_instructions'] = exercise_instructions
 
-        # Save the generated plan
+            # Save the generated plan
             plan = '\n'.join(processed_lines)
-        responses['plan_text'] = plan
-        from datetime import datetime
-        current_time = datetime.now()
-        responses['timestamp'] = current_time.strftime("%B %d, %Y | %I:%M%p").replace("AM", "am").replace("PM", "pm")
-        self.app.save_workout_plan(responses)
+            responses['plan_text'] = plan
+            from datetime import datetime
+            current_time = datetime.now()
+            responses['timestamp'] = current_time.strftime("%B %d, %Y | %I:%M%p").replace("AM", "am").replace("PM", "pm")
+            self.app.save_workout_plan(responses)
 
             # When plan is ready, complete the progress bar
             self.progress_value = 100
@@ -1262,10 +1235,8 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
                                                foreground="#4dabf7", underline=1)
                     
                     # Insert the exercise name
-                start_index = self.plan_text.index("end-1c")
                     self.plan_text.insert("end", exercise_name)
-                end_index = self.plan_text.index("end-1c")
-
+                    
                     # Apply the tag
                     self.plan_text.tag_add(tag_name, start_index, end_index)
                     
@@ -1292,10 +1263,10 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
             elif line.startswith('-'):
                 # Bullet point
                 bullet_text = line.lstrip('-').strip()
-                    self.plan_text.insert("end", "• " + bullet_text + "\n", "bullet")
+                self.plan_text.insert("end", "• " + bullet_text + "\n", "bullet")
             else:
                 # Normal text
-                    self.plan_text.insert("end", line + "\n", "normal")
+                self.plan_text.insert("end", line + "\n", "normal")
 
         # Make it read-only
         self.plan_text.config(state="disabled")
@@ -1345,7 +1316,7 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
         # Create new plan button (full orange)
         self.new_plan_canvas = tk.Canvas(button_frame, width=150, height=40,
                                        bg='#212529', highlightthickness=0)
-            self.new_plan_canvas.pack(side="left", padx=10)
+        self.new_plan_canvas.pack(side="left", padx=10)
         self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8,
                                                fill='#eb5e28', outline='#eb5e28')
         self.new_plan_label = tk.Label(self.new_plan_canvas, text="New Plan",
@@ -1448,7 +1419,7 @@ Format the plan in a clear, easy-to-follow structure with each exercise name in 
                 
                 # Skip empty lines
                 if not line:
-                        processed_lines.append(line)
+                    processed_lines.append(line)
                     continue
 
                 # Check for exercise names in square brackets
@@ -1476,7 +1447,7 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
                             if instruction_response and instruction_response.text:
                                 exercise_instructions[exercise_name] = instruction_response.text.strip()
                                 logging.info(f"Generated instructions for {exercise_name}")
-                else:
+                            else:
                                 exercise_instructions[exercise_name] = "Instructions not available."
                                 logging.warning(f"No instructions generated for {exercise_name}")
                         except Exception as e:
@@ -1484,7 +1455,7 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
                             logging.error(f"Error generating instructions for {exercise_name}: {e}")
 
                 # Add the line as is
-                    processed_lines.append(line)
+                processed_lines.append(line)
 
             # Store the exercise instructions in the responses dictionary
             responses['exercise_instructions'] = exercise_instructions
@@ -1522,7 +1493,7 @@ Error details: {str(e)}"""
         self.show_loading_screen()
 
         # Start new plan generation
-        self.after(100, lambda: self.generate_and_display_plan(self.responses))
+        self.after(100, lambda: self.start_plan_generation(self.responses))
 
 
 class ExerciseInstructionPopup(tk.Toplevel):
