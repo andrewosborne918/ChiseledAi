@@ -148,37 +148,43 @@ class WorkoutApp(tk.Tk):
         self.data_dir = self.get_data_directory()
         os.makedirs(self.data_dir, exist_ok=True)
 
-        # Create loading screen
+        # Create loading screen (no padding or margin except top/bottom)
         self.loading_frame = tk.Frame(self, bg='#212529')
         self.loading_frame.pack(fill="both", expand=True)
 
-        # Create a container for vertical distribution
-        self.loading_container = tk.Frame(self.loading_frame, bg='#212529', padx=40)
-        self.loading_container.pack(expand=True, fill="both", pady=50)
+        self.loading_container = tk.Frame(self.loading_frame, bg='#212529')
+        self.loading_container.pack(expand=True, fill="both", pady=(50, 50))
 
-        # Add title to loading screen
+        # Add title to loading screen (top)
         self.title_label = tk.Label(self.loading_container, text="CHISELED AI",
                                     font=("Impact", 80), bg='#212529', fg='#eb5e28')
-        self.title_label.pack(pady=20)
+        self.title_label.grid(row=0, column=0, sticky="n", pady=0)
 
-        # Load and display logo
+        # Load and display logo (middle)
         try:
             logo_image = Image.open("Images/Chiseled_logo.png")
             max_size = (400, 400)
             logo_image.thumbnail(max_size, Image.Resampling.LANCZOS)
+            self.logo_image = logo_image
             self.logo_photo = ImageTk.PhotoImage(logo_image)
             self.logo_label = tk.Label(self.loading_container, image=self.logo_photo, bg='#212529')
-            self.logo_label.pack(pady=20)
+            self.logo_label.grid(row=1, column=0, sticky="ns", pady=0)
         except Exception as e:
             print(f"Error loading logo: {e}")
             self.subtitle_label = tk.Label(self.loading_container, text="CHISELED AI LOGO",
                                            font=("Helvetica", 16), bg='#212529', fg='white')
-            self.subtitle_label.pack(pady=20)
+            self.subtitle_label.grid(row=1, column=0, sticky="ns", pady=0)
 
-        # Add tagline
+        # Add tagline (bottom)
         self.tagline_label = tk.Label(self.loading_container, text="YOUR PERSONAL WORKOUT PLANNER",
                                       font=("Helvetica", 24), bg='#212529', fg='white')
-        self.tagline_label.pack(pady=20)
+        self.tagline_label.grid(row=2, column=0, sticky="s", pady=0)
+
+        # Configure row/column weights for vertical distribution
+        self.loading_container.grid_rowconfigure(0, weight=1)
+        self.loading_container.grid_rowconfigure(1, weight=2)
+        self.loading_container.grid_rowconfigure(2, weight=1)
+        self.loading_container.grid_columnconfigure(0, weight=1)
 
         # Check for saved workout plan
         self.saved_plan = self.load_saved_plan()
@@ -249,104 +255,98 @@ class WorkoutApp(tk.Tk):
     def on_window_resize(self, event):
         if event.widget == self:
             width = self.winfo_width()
-            print(f"Window width: {width}")  # Debug logging
-
+            # Dynamically set wraplength for title and tagline
+            wrap = max(200, int(width * 0.9))
+            if hasattr(self, 'title_label'):
+                self.title_label.config(wraplength=wrap)
+            if hasattr(self, 'tagline_label'):
+                self.tagline_label.config(wraplength=wrap)
+            if hasattr(self, 'main_title_label'):
+                self.main_title_label.config(wraplength=wrap)
+            if hasattr(self, 'main_subtitle_label'):
+                self.main_subtitle_label.config(wraplength=wrap)
+            # Update plan page labels if present
+            if hasattr(self, 'workout_plan_page'):
+                if hasattr(self.workout_plan_page, 'main_title_label'):
+                    self.workout_plan_page.main_title_label.config(wraplength=wrap)
+                if hasattr(self.workout_plan_page, 'main_subtitle_label'):
+                    self.workout_plan_page.main_subtitle_label.config(wraplength=wrap)
+                # Responsive plan page buttons
+                if hasattr(self.workout_plan_page, 'refresh_canvas') and hasattr(self.workout_plan_page, 'refresh_label'):
+                    # Make buttons even smaller on small screens
+                    if width < 450:
+                        btn_w = 80
+                        btn_h = 28
+                        btn_font = ("Helvetica", 9, "bold")
+                    else:
+                        btn_w = 150
+                        btn_h = 40
+                        btn_font = ("Helvetica", 12, "bold")
+                    # Update refresh button
+                    self.workout_plan_page.refresh_canvas.config(width=btn_w, height=btn_h)
+                    self.workout_plan_page.refresh_canvas.delete("all")
+                    self.workout_plan_page.refresh_canvas.create_rounded_rect(0, 0, btn_w, btn_h, 8, fill='#212529', outline='#eb5e28', width=2)
+                    self.workout_plan_page.refresh_label.config(font=btn_font)
+                    self.workout_plan_page.refresh_label.place(relx=0.5, rely=0.5, anchor="center")
+                    # Update new plan button
+                    if hasattr(self.workout_plan_page, 'new_plan_canvas') and hasattr(self.workout_plan_page, 'new_plan_label'):
+                        self.workout_plan_page.new_plan_canvas.config(width=btn_w, height=btn_h)
+                        self.workout_plan_page.new_plan_canvas.delete("all")
+                        self.workout_plan_page.new_plan_canvas.create_rounded_rect(0, 0, btn_w, btn_h, 8, fill='#eb5e28', outline='#eb5e28')
+                        self.workout_plan_page.new_plan_label.config(font=btn_font)
+                        self.workout_plan_page.new_plan_label.place(relx=0.5, rely=0.5, anchor="center")
+            # Adjust font size for small screens
             if width < 450:
-                print("Applying small screen font sizes")  # Debug logging
-                # Small screen font sizes
                 if hasattr(self, 'title_label'):
                     self.title_label.config(font=("Impact", 40))
-                if hasattr(self, 'subtitle_label'):
-                    self.subtitle_label.config(font=("Helvetica", 12))
                 if hasattr(self, 'tagline_label'):
-                    self.tagline_label.config(font=("Helvetica", 16))
+                    self.tagline_label.config(font=("Helvetica", 14))
                 if hasattr(self, 'main_title_label'):
                     self.main_title_label.config(font=("Impact", 30))
                 if hasattr(self, 'main_subtitle_label'):
                     self.main_subtitle_label.config(font=("Helvetica", 12))
-
-                # Update loading screen image size
-                if hasattr(self, 'logo_image'):
-                    max_size = (200, 200)  # Smaller size for small screens
-                    self.logo_image.thumbnail(max_size, Image.Resampling.LANCZOS)
-                    self.logo_photo = ImageTk.PhotoImage(self.logo_image)
-                    if hasattr(self, 'logo_label'):
-                        self.logo_label.config(image=self.logo_photo)
-
-                # Update question fonts
+                if hasattr(self, 'workout_plan_page'):
+                    if hasattr(self.workout_plan_page, 'main_title_label'):
+                        self.workout_plan_page.main_title_label.config(font=("Impact", 30))
+                    if hasattr(self.workout_plan_page, 'main_subtitle_label'):
+                        self.workout_plan_page.main_subtitle_label.config(font=("Helvetica", 12))
+                # Update all question labels
                 if hasattr(self, 'sections'):
-                    print("Updating question fonts to small size")  # Debug logging
                     for section in self.sections:
-                        # Update question label
                         if hasattr(section, 'question_label'):
-                            section.question_label.config(font=("Helvetica", 12, "bold"), wraplength=300)
-                            print(f"Updated question label in {section.__class__.__name__}")  # Debug logging
-
-                        # Update all labels in the section
-                        for widget in section.winfo_children():
-                            if isinstance(widget, tk.Label):
-                                widget.config(font=("Helvetica", 12), wraplength=300)
-                            elif isinstance(widget, tk.Checkbutton) or isinstance(widget, tk.Radiobutton):
-                                widget.config(font=("Helvetica", 10), wraplength=300)
-                            elif isinstance(widget, tk.Frame):
-                                # Check widgets in nested frames
-                                for child in widget.winfo_children():
-                                    if isinstance(child, tk.Label):
-                                        child.config(font=("Helvetica", 12), wraplength=300)
-                                    elif isinstance(child, tk.Checkbutton) or isinstance(child, tk.Radiobutton):
-                                        child.config(font=("Helvetica", 10), wraplength=300)
-
-                # Auto-sync after significant UI changes
-                git_sync("Auto-sync: Updated UI for small screen")
+                            section.question_label.config(font=("Helvetica", 12, "bold"), wraplength=wrap)
             else:
-                print("Applying normal screen font sizes")  # Debug logging
-                # Normal screen font sizes
                 if hasattr(self, 'title_label'):
                     self.title_label.config(font=("Impact", 80))
-                if hasattr(self, 'subtitle_label'):
-                    self.subtitle_label.config(font=("Helvetica", 16))
                 if hasattr(self, 'tagline_label'):
                     self.tagline_label.config(font=("Helvetica", 24))
                 if hasattr(self, 'main_title_label'):
                     self.main_title_label.config(font=("Impact", 50))
                 if hasattr(self, 'main_subtitle_label'):
                     self.main_subtitle_label.config(font=("Helvetica", 14))
-
-                # Update loading screen image size
-                if hasattr(self, 'logo_image'):
-                    max_size = (400, 400)  # Normal size for larger screens
-                    self.logo_image.thumbnail(max_size, Image.Resampling.LANCZOS)
-                    self.logo_photo = ImageTk.PhotoImage(self.logo_image)
-                    if hasattr(self, 'logo_label'):
-                        self.logo_label.config(image=self.logo_photo)
-
-                # Update question fonts
+                if hasattr(self, 'workout_plan_page'):
+                    if hasattr(self.workout_plan_page, 'main_title_label'):
+                        self.workout_plan_page.main_title_label.config(font=("Impact", 50))
+                    if hasattr(self.workout_plan_page, 'main_subtitle_label'):
+                        self.workout_plan_page.main_subtitle_label.config(font=("Helvetica", 14))
+                # Update all question labels
                 if hasattr(self, 'sections'):
-                    print("Updating question fonts to normal size")  # Debug logging
                     for section in self.sections:
-                        # Update question label
                         if hasattr(section, 'question_label'):
-                            section.question_label.config(font=("Helvetica", 16, "bold"), wraplength=400)
-                            print(f"Updated question label in {section.__class__.__name__}")  # Debug logging
-
-                        # Update all labels in the section
-                        for widget in section.winfo_children():
-                            if isinstance(widget, tk.Label):
-                                widget.config(font=("Helvetica", 16), wraplength=400)
-                            elif isinstance(widget, tk.Checkbutton) or isinstance(widget, tk.Radiobutton):
-                                widget.config(font=("Helvetica", 12), wraplength=400)
-                            elif isinstance(widget, tk.Frame):
-                                # Check widgets in nested frames
-                                for child in widget.winfo_children():
-                                    if isinstance(child, tk.Label):
-                                        child.config(font=("Helvetica", 16), wraplength=400)
-                                    elif isinstance(child, tk.Checkbutton) or isinstance(child, tk.Radiobutton):
-                                        child.config(font=("Helvetica", 12), wraplength=400)
-
-                # Auto-sync after significant UI changes
-                git_sync("Auto-sync: Updated UI for normal screen")
-
-            # Force update of all widgets
+                            section.question_label.config(font=("Helvetica", 16, "bold"), wraplength=wrap)
+            # Responsive logo image on load page
+            if hasattr(self, 'logo_label') and hasattr(self, 'logo_image'):
+                # Set max size based on window width
+                max_dim = 200 if width < 450 else 400
+                img = self.logo_image.copy()
+                img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+                self.logo_photo = ImageTk.PhotoImage(img)
+                self.logo_label.config(image=self.logo_photo)
+            # Ensure top buttons are responsive (if present)
+            if hasattr(self, 'button_container'):
+                self.button_container.pack(fill="x")
+            if hasattr(self, 'title_frame'):
+                self.title_frame.pack(fill="x")
             self.update_idletasks()
 
     def show_main_form(self):
@@ -604,65 +604,32 @@ class WorkoutFocus(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
-
-        # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-
-        tk.Label(self.center_frame, text="1. What kind of workout would you like to do?",
-                 font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=500).pack(anchor="w", pady=5)
-        self.dropdown = ttk.Combobox(self.center_frame, textvariable=app.focus_var,
-                                values=["Full body", "Target muscle group"])
+        tk.Label(self.center_frame, text="1. What kind of workout would you like to do?", font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=500).pack(anchor="w", pady=5)
+        self.dropdown = ttk.Combobox(self.center_frame, textvariable=app.focus_var, values=["Full body", "Target muscle group"])
         self.dropdown.pack(fill="x", pady=5)
-        # Remove automatic advancement
         self.dropdown.bind("<<ComboboxSelected>>", self.on_focus_change)
-        # Make entire dropdown clickable to show list
         self.dropdown.bind("<Button-1>", lambda e: self.dropdown.focus_set() or self.dropdown.event_generate('<Down>'))
-
-        # Muscle group checkboxes (initially hidden)
         body_parts = {
-            "Upper Body": [
-                "Chest",
-                "Back",
-                "Shoulders",
-                "Biceps",
-                "Triceps",
-                "Forearms"
-            ],
-            "Lower Body": [
-                "Glutes",
-                "Quads",
-                "Hamstrings",
-                "Calves",
-                "Hip Flexors"
-            ],
-            "Core / Midsection": [
-                "Upper Abs",
-                "Lower Abs",
-                "Obliques",
-                "Lower Back",
-                "Transverse Abdominis"
-            ]
+            "Upper Body": ["Chest", "Back", "Shoulders", "Biceps", "Triceps", "Forearms"],
+            "Lower Body": ["Glutes", "Quads", "Hamstrings", "Calves", "Hip Flexors"],
+            "Core / Midsection": ["Upper Abs", "Lower Abs", "Obliques", "Lower Back", "Transverse Abdominis"]
         }
         self.muscle_frame = tk.Frame(self.center_frame, bg='#212529')
-        self.muscle_label = tk.Label(self.muscle_frame, text="Which muscle groups?",
-                 font=("Helvetica", 14, "bold"), bg='#212529', fg='white', wraplength=400)
+        self.muscle_label = tk.Label(self.muscle_frame, text="Which muscle groups?", font=("Helvetica", 14, "bold"), bg='#212529', fg='white', wraplength=400)
         self.muscle_label.pack(anchor="w", pady=5)
-        # Create a row frame for columns
         self.muscle_row = tk.Frame(self.muscle_frame, bg='#212529')
         self.muscle_row.pack(fill="x", pady=5)
         for col, (group_name, muscles) in enumerate(body_parts.items()):
             col_frame = tk.Frame(self.muscle_row, bg='#212529')
             col_frame.grid(row=0, column=col, padx=10, sticky="n")
-            group_label = tk.Label(col_frame, text=group_name,
-                                   font=("Helvetica", 13, "bold"), bg='#212529', fg='#eb5e28', wraplength=150)
+            group_label = tk.Label(col_frame, text=group_name, font=("Helvetica", 13, "bold"), bg='#212529', fg='#eb5e28', wraplength=150)
             group_label.pack(anchor="w", pady=(0, 2))
             for muscle in muscles:
                 var = tk.BooleanVar()
                 self.app.muscle_vars[muscle] = var
-                tk.Checkbutton(col_frame, text=muscle, variable=var,
-                               command=lambda: None, font=("Helvetica", 12),
-                               bg='#212529', fg='white', wraplength=140, anchor="w", justify="left").pack(anchor="w", pady=2)
+                CustomCheckbox(col_frame, text=muscle, variable=var, command=lambda: None, bg='#212529', fg='white', selectcolor='#eb5e28').pack(anchor="w", pady=2)
 
     def on_focus_change(self, event=None):
         if self.app.focus_var.get() == "Target muscle group":
@@ -696,23 +663,89 @@ class WorkoutGoal(tk.Frame):
         self.question_label.config(text=f"{number}. What is your primary goal?")
 
 
+class CustomCheckbox(tk.Frame):
+    def __init__(self, parent, text, variable, command=None, bg='#212529', fg='white', selectcolor='#eb5e28', **kwargs):
+        super().__init__(parent, bg=bg)
+        self.variable = variable
+        self.command = command
+        self.bg = bg
+        self.fg = fg
+        self.selectcolor = selectcolor
+        self.canvas = tk.Canvas(self, width=28, height=28, bg=bg, highlightthickness=0)
+        self.canvas.pack(side="left", padx=(0, 8))
+        self.label = tk.Label(self, text=text, font=("Helvetica", 12), bg=bg, fg=fg)
+        self.label.pack(side="left")
+        self.canvas.bind("<Button-1>", self.on_click)
+        self.label.bind("<Button-1>", self.on_click)
+        self.variable.trace_add('write', self.update_state)
+        self.draw()
+
+    def draw(self):
+        self.canvas.delete("all")
+        # Outer square
+        self.canvas.create_rectangle(4, 4, 24, 24, outline="white", width=2, fill=self.bg)
+        # Fill and checkmark if selected
+        if self.variable.get():
+            self.canvas.create_rectangle(6, 6, 22, 22, outline="white", width=0, fill=self.selectcolor)
+            # Draw checkmark
+            self.canvas.create_line(9, 15, 14, 20, 20, 10, fill="white", width=3, capstyle=tk.ROUND, joinstyle=tk.ROUND)
+
+    def on_click(self, event=None):
+        self.variable.set(not self.variable.get())
+        if self.command:
+            self.command()
+        self.draw()
+
+    def update_state(self, *args):
+        self.draw()
+
+class CustomRadioButton(tk.Frame):
+    def __init__(self, parent, text, variable, value, command=None, bg='#212529', fg='white', selectcolor='#eb5e28', **kwargs):
+        super().__init__(parent, bg=bg)
+        self.variable = variable
+        self.value = value
+        self.command = command
+        self.bg = bg
+        self.fg = fg
+        self.selectcolor = selectcolor
+        self.canvas = tk.Canvas(self, width=28, height=28, bg=bg, highlightthickness=0)
+        self.canvas.pack(side="left", padx=(0, 8))
+        self.label = tk.Label(self, text=text, font=("Helvetica", 12), bg=bg, fg=fg)
+        self.label.pack(side="left")
+        self.canvas.bind("<Button-1>", self.on_click)
+        self.label.bind("<Button-1>", self.on_click)
+        self.variable.trace_add('write', self.update_state)
+        self.draw()
+
+    def draw(self):
+        self.canvas.delete("all")
+        # Outer circle
+        self.canvas.create_oval(4, 4, 24, 24, outline="white", width=2, fill=self.bg)
+        # Fill if selected
+        if self.variable.get() == self.value:
+            self.canvas.create_oval(8, 8, 20, 20, outline="white", width=0, fill=self.selectcolor)
+
+    def on_click(self, event=None):
+        self.variable.set(self.value)
+        if self.command:
+            self.command()
+        self.draw()
+
+    def update_state(self, *args):
+        self.draw()
+
 class ExperienceLevel(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
-
-        # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-
-        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white',
-                                       wraplength=300)
+        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
+        # Only set the value, do not reassign the variable
+        app.experience_var.set("")
         for level in ["Beginner", "Intermediate", "Advanced"]:
-            tk.Radiobutton(self.center_frame, text=level, variable=app.experience_var, value=level,
-                           command=lambda: None, font=("Helvetica", 12),
-                           bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
-
+            CustomRadioButton(self.center_frame, text=level, variable=app.experience_var, value=level, bg='#212529', fg='white', selectcolor='#eb5e28').pack(anchor="w", pady=2)
     def update_numbering(self, number):
         self.question_label.config(text=f"{number}. What is your fitness level?")
 
@@ -721,43 +754,27 @@ class EquipmentSelection(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
-
-        # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-
-        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white',
-                                       wraplength=300)
+        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
-        equipment_list = ["Bodyweight only", "Dumbbells", "Barbells", "Resistance bands", "Kettlebells", "Machines",
-                          "Other"]
-
-        # Create a frame for checkboxes
+        equipment_list = ["Bodyweight only", "Dumbbells", "Barbells", "Resistance bands", "Kettlebells", "Machines", "Other"]
         self.checkbox_frame = tk.Frame(self.center_frame, bg='#212529')
         self.checkbox_frame.pack(fill="x", pady=5)
-
-        # Create checkboxes for each equipment type
         for eq in equipment_list:
             var = tk.BooleanVar()
             app.equipment_vars[eq] = var
-            tk.Checkbutton(self.checkbox_frame, text=eq, variable=var,
-                           command=lambda eq=eq: self.on_checkbox_change(eq),
-                           font=("Helvetica", 12), bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
-
-        # Create text entry frame (initially hidden)
+            CustomCheckbox(self.checkbox_frame, text=eq, variable=var, command=lambda eq=eq: self.on_checkbox_change(eq), bg='#212529', fg='white', selectcolor='#eb5e28').pack(anchor="w", pady=2)
+        # Always create the text_frame and its children
         self.text_frame = tk.Frame(self.center_frame, bg='#212529')
-        self.text_label = tk.Label(self.text_frame, text="Please describe your other equipment:",
-                                   font=("Helvetica", 12), bg='#212529', fg='white')
+        self.text_label = tk.Label(self.text_frame, text="Please describe your other equipment:", font=("Helvetica", 12), bg='#212529', fg='white')
         self.text_label.pack(anchor="w", pady=(20, 5))
-
-        # Create text widget for multi-line input
         self.text_widget = tk.Text(self.text_frame, height=4, font=("Helvetica", 12), bg='#212529', fg='white')
         self.text_widget.pack(fill="x", pady=5)
-
-        # Add scrollbar to text widget
         text_scrollbar = ttk.Scrollbar(self.text_frame, orient="vertical", command=self.text_widget.yview)
         text_scrollbar.pack(side="right", fill="y")
         self.text_widget.configure(yscrollcommand=text_scrollbar.set)
+        # Do not pack text_frame initially
 
     def on_checkbox_change(self, equipment):
         if equipment == "Other":
@@ -765,8 +782,6 @@ class EquipmentSelection(tk.Frame):
                 self.text_frame.pack(fill="x", pady=10)
             else:
                 self.text_frame.pack_forget()
-        # Remove automatic advancement
-        # Just update the UI without advancing to next question
 
     def update_numbering(self, number):
         self.question_label.config(text=f"{number}. Available equipment:")
@@ -793,13 +808,36 @@ class WorkoutDuration(tk.Frame):
         self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white',
                                        wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
-        dropdown = ttk.Combobox(self.center_frame, textvariable=app.duration_var,
-                                values=["15 minutes", "30 minutes", "45 minutes", "60 minutes"])
-        dropdown.pack(fill="x", pady=5)
-        # Remove automatic advancement
-        dropdown.bind("<<ComboboxSelected>>", lambda e: None)
-        # Make entire dropdown clickable to show list
-        dropdown.bind("<Button-1>", lambda e: dropdown.focus_set() or dropdown.event_generate('<Down>'))
+
+        # Add a scale (slider) for duration selection
+        self.duration_var = tk.IntVar(value=60)
+        self.scale = tk.Scale(self.center_frame, from_=15, to=180, orient="horizontal", resolution=5,
+                              variable=self.duration_var, bg='#212529', fg='white', troughcolor='#2b3035',
+                              highlightthickness=0, showvalue=0, length=300, sliderrelief='flat',
+                              activebackground='#eb5e28')
+        self.scale.pack(fill="x", pady=10)
+
+        # Label to show the selected duration
+        self.value_label = tk.Label(self.center_frame, text="60 minutes", font=("Helvetica", 14), bg='#212529', fg='#eb5e28')
+        self.value_label.pack(anchor="center", pady=(0, 5))
+
+        # Update label in real time
+        self.scale.bind("<B1-Motion>", self.update_value_label)
+        self.scale.bind("<ButtonRelease-1>", self.update_value_label)
+        self.update_value_label()
+
+        # Link to app.duration_var
+        app.duration_var = self.duration_var
+
+    def update_value_label(self, event=None):
+        value = self.duration_var.get()
+        if value < 60:
+            label = f"{value}m"
+        else:
+            hours = value // 60
+            minutes = value % 60
+            label = f"{hours}h {minutes:02d}m"
+        self.value_label.config(text=label)
 
     def update_numbering(self, number):
         self.question_label.config(text=f"{number}. Workout duration?")
@@ -833,41 +871,26 @@ class InjuryRestrictions(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg='#212529')
         self.app = app
-
-        # Create centered container
         self.center_frame = tk.Frame(self, bg='#212529', padx=5)
         self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-
-        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white',
-                                       wraplength=300)
+        self.question_label = tk.Label(self.center_frame, font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300)
         self.question_label.pack(anchor="w", pady=5)
-
-        # Create a frame for radio buttons
+        # Only set the value, do not reassign the variable
+        app.injury_var.set("")
         self.radio_frame = tk.Frame(self.center_frame, bg='#212529')
         self.radio_frame.pack(fill="x", pady=10)
-
-        # Create radio buttons
         for option in ["No", "Yes"]:
-            tk.Radiobutton(self.radio_frame, text=option, variable=app.injury_var, value=option,
-                           command=self.on_injury_selection, font=("Helvetica", 12),
-                           bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
-
-        # Create text entry frame (initially hidden)
+            CustomRadioButton(self.radio_frame, text=option, variable=app.injury_var, value=option, command=self.on_injury_selection, bg='#212529', fg='white', selectcolor='#eb5e28').pack(anchor="w", pady=2)
+        # Always create the text_frame and its children
         self.text_frame = tk.Frame(self.center_frame, bg='#212529')
-        self.text_label = tk.Label(self.text_frame, text="Please describe your injuries/restrictions:",
-                                   font=("Helvetica", 12), bg='#212529', fg='white')
+        self.text_label = tk.Label(self.text_frame, text="Please describe your injuries/restrictions:", font=("Helvetica", 12), bg='#212529', fg='white')
         self.text_label.pack(anchor="w", pady=(20, 5))
-
-        # Create text widget for multi-line input
-        self.text_widget = tk.Text(self.text_frame, height=4, font=("Helvetica", 12),
-                                 bg='#212529', fg='white', insertbackground='white')
+        self.text_widget = tk.Text(self.text_frame, height=4, font=("Helvetica", 12), bg='#212529', fg='white')
         self.text_widget.pack(fill="x", pady=5)
-
-        # Add scrollbar to text widget
-        text_scrollbar = ttk.Scrollbar(self.text_frame, orient="vertical",
-                                     command=self.text_widget.yview)
+        text_scrollbar = ttk.Scrollbar(self.text_frame, orient="vertical", command=self.text_widget.yview)
         text_scrollbar.pack(side="right", fill="y")
         self.text_widget.configure(yscrollcommand=text_scrollbar.set)
+        # Do not pack text_frame initially
 
     def on_injury_selection(self):
         """Handle injury selection changes"""
@@ -880,8 +903,9 @@ class InjuryRestrictions(tk.Frame):
         self.question_label.config(text=f"{number}. Any injuries/restrictions?")
 
     def collect_injury_info(self):
+        """Return the user's injury information if 'Yes' is selected, else None."""
         if self.app.injury_var.get() == "Yes":
-            return self.text_widget.get("1.0", "end-1c").strip()
+            return self.text_widget.get("1.0", "end-1c").strip() or None
         return None
 
 
@@ -1532,14 +1556,26 @@ class ExerciseInstructionPopup(tk.Toplevel):
         self.transient(parent)  # Set to be on top of the main window
         self.grab_set()  # Make the popup modal
         
+        # Store for dynamic resizing
+        self.exercise_name = exercise_name
+        self.header_label = None
+        self.header_font_large = ("Impact", 24)
+        self.header_font_small = ("Impact", 16)
+        self.header_min_font = ("Impact", 12)
+        self.header_padding = 40  # 20px left/right
+
         # Create main container
         main_container = tk.Frame(self, bg='#212529', padx=20, pady=20)
         main_container.pack(fill="both", expand=True)
         
-        # Add exercise name as header
-        header = tk.Label(main_container, text=exercise_name,
-                         font=("Impact", 24), bg='#212529', fg='#eb5e28')
-        header.pack(pady=(0, 20))
+        # Add exercise name as header (will be updated responsively)
+        self.header_label = tk.Label(main_container, text=exercise_name,
+                                    font=self.header_font_large, bg='#212529', fg='#eb5e28',
+                                    wraplength=340, justify="center")
+        self.header_label.pack(pady=(0, 20))
+
+        # Bind resize event for responsive header
+        self.bind("<Configure>", self._on_resize_header)
 
         # Create text frame
         text_frame = tk.Frame(main_container, bg='#212529')
@@ -1573,7 +1609,8 @@ class ExerciseInstructionPopup(tk.Toplevel):
                                      spacing2=0,
                                      spacing3=0,
                                      lmargin1=0,
-                                     lmargin2=0)
+                                     lmargin2=0,
+                                     justify="left")
         self.text_widget.tag_configure("bullet", 
                                      font=("Helvetica", 14),
                                      foreground="white",
@@ -1581,67 +1618,87 @@ class ExerciseInstructionPopup(tk.Toplevel):
                                      spacing2=0,
                                      spacing3=0,
                                      lmargin1=10,
-                                     lmargin2=25)
+                                     lmargin2=25,
+                                     justify="left")
 
-        # Process and insert the instructions with formatting
+        # --- Formatting logic ---
         sections = instructions.split('\n')
         intro_lines = []
         outro_lines = []
-        in_intro = True
-        in_bullets = False
-        last_heading_index = -1
+        headings = []
         heading_indices = []
-        # First, find all heading indices
+        # Identify headings (numbered, max 6 words)
         for idx, section in enumerate(sections):
             s = section.strip()
-            if s.startswith(('1.', '2.', '3.', '4.', '5.', '6.')) and s.endswith((':', '.')):
+            if s and s[0].isdigit() and s[1] == '.' and (s.endswith(':') or s.endswith('.')):
                 words = s.split()
                 if len(words) <= 6:
+                    headings.append(s)
                     heading_indices.append(idx)
-        # The last heading index
-        if heading_indices:
-            last_heading_index = heading_indices[-1]
+        # Find intro (before first heading)
+        first_heading_idx = heading_indices[0] if heading_indices else None
+        last_heading_idx = heading_indices[-1] if heading_indices else None
+        # Collect intro lines
         for idx, section in enumerate(sections):
-            section = section.strip()
-            if not section:
-                if in_bullets:
-                    self.text_widget.insert("end", "\n")
-                continue
+            if first_heading_idx is not None and idx < first_heading_idx:
+                if section.strip():
+                    intro_lines.append(section.strip())
+            elif first_heading_idx is None:
+                if section.strip():
+                    intro_lines.append(section.strip())
+        # Collect outro lines (after last heading and its bullets)
+        if last_heading_idx is not None:
+            # Find where the last heading's bullets end
+            after_last_heading = False
+            for idx, section in enumerate(sections):
+                if idx == last_heading_idx:
+                    after_last_heading = True
+                    continue
+                if after_last_heading:
+                    s = section.strip()
+                    # If it's a bullet (starts with dash or similar), skip
+                    if s.startswith('-') or s.startswith('•') or (s and not s[0].isdigit()):
+                        continue
+                    # If it's empty, skip
+                    if not s:
+                        continue
+                    # Otherwise, treat as outro
+                    outro_lines.append(s)
+        # Insert intro as normal paragraph
+        if intro_lines:
+            self.text_widget.insert("end", " ".join(intro_lines) + "\n\n", "normal")
+        # Insert headings and their bullets
+        idx = 0
+        while idx < len(sections):
+            section = sections[idx].strip()
             # Remove markdown symbols
-            section = section.replace('***', '')
-            section = section.replace('**', '')
-            section = section.replace('*', '')
-            section = section.replace('###', '')
-            section = section.replace('##', '')
-            section = section.replace('#', '')
-            # Detect short numbered headings (max 6 words)
-            is_heading = False
-            if section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')) and section.endswith((':', '.')):
+            for sym in ['***', '**', '*', '###', '##', '#']:
+                section = section.replace(sym, '')
+            # Heading
+            if section and section[0].isdigit() and section[1] == '.' and (section.endswith(':') or section.endswith('.')):
                 words = section.split()
                 if len(words) <= 6:
-                    is_heading = True
-            if in_intro and not is_heading:
-                intro_lines.append(section)
-                continue
-            if is_heading:
-                # Print intro text if any
-                if in_intro and intro_lines:
-                    self.text_widget.insert("end", " ".join(intro_lines) + "\n\n", "normal")
-                    intro_lines = []
-                in_intro = False
-                in_bullets = True
-                self.text_widget.insert("end", section + "\n", "header")
-                continue
-            # If this is after the last heading, treat as outro
-            if last_heading_index != -1 and idx > last_heading_index:
-                outro_lines.append(section)
-                continue
-            if in_bullets:
-                self.text_widget.insert("end", "• " + section + "\n", "bullet")
-        # If only intro text exists
-        if in_intro and intro_lines:
-            self.text_widget.insert("end", " ".join(intro_lines) + "\n", "normal")
-        # If outro exists, print as normal paragraph
+                    self.text_widget.insert("end", section + "\n", "header")
+                    idx += 1
+                    # Insert bullets under this heading
+                    while idx < len(sections):
+                        bullet = sections[idx].strip()
+                        # Remove markdown symbols
+                        for sym in ['***', '**', '*', '###', '##', '#']:
+                            bullet = bullet.replace(sym, '')
+                        if bullet.startswith('-') or bullet.startswith('•'):
+                            bullet_text = bullet.lstrip('-•').strip()
+                            self.text_widget.insert("end", "• " + bullet_text + "\n", "bullet")
+                            idx += 1
+                        elif bullet and not (bullet[0].isdigit() and bullet[1] == '.' and (bullet.endswith(':') or bullet.endswith('.'))):
+                            # Sometimes bullets are not marked, treat as bullet if not a heading
+                            self.text_widget.insert("end", "• " + bullet + "\n", "bullet")
+                            idx += 1
+                        else:
+                            break
+                    continue
+            idx += 1
+        # Insert outro as normal paragraph
         if outro_lines:
             self.text_widget.insert("end", "\n" + " ".join(outro_lines) + "\n", "normal")
 
@@ -1696,6 +1753,20 @@ class ExerciseInstructionPopup(tk.Toplevel):
         x = (self.winfo_screenwidth() // 2) - (width // 2)
         y = (self.winfo_screenheight() // 2) - (height // 2)
         self.geometry(f"{width}x{height}+{x}+{y}")
+
+    def _on_resize_header(self, event=None):
+        # Responsive wraplength and font size for header
+        width = self.winfo_width()
+        wrap = max(100, width - self.header_padding)
+        text_len = len(self.exercise_name)
+        # Heuristic: normal font unless text would wrap to more than 2 lines
+        avg_char_width = 13  # rough px width for Impact 24
+        max_chars_per_line = wrap // avg_char_width
+        if text_len > max_chars_per_line * 2:
+            font = self.header_font_small
+        else:
+            font = self.header_font_large
+        self.header_label.config(wraplength=wrap, font=font)
 
 
 if __name__ == "__main__":
