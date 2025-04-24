@@ -1024,9 +1024,8 @@ class WorkoutPlanPage(tk.Frame):
         elapsed_time = time.time() - self.start_time
         target_progress = min(95, (elapsed_time / 12.0) * 95)
         
-        # Smooth the progress update
-        if target_progress > self.progress_value:
-            self.progress_value = min(target_progress, self.progress_value + 1)
+        # Update progress value
+        self.progress_value = target_progress
         
         # Calculate width of progress fill
         width = (self.progress_value / 100) * 296
@@ -1612,7 +1611,7 @@ class ExerciseInstructionPopup(tk.Toplevel):
                     self.text_widget.insert("end", "\n".join(current_section) + "\n\n", "normal")
                     current_section = []
                 # Insert the header
-                self.text_widget.insert("end", section + "\n", "header")
+                self.text_widget.insert("end", section + "\n\n", "header")
             else:
                 # Add to current section
                 current_section.append(section)
