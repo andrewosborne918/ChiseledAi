@@ -17,6 +17,7 @@ import pandas as pd
 from typing import Dict, List, Optional
 import threading
 import re
+import random
 
 # Add rounded rectangle method to Canvas class
 def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
@@ -974,8 +975,49 @@ class WorkoutPlanPage(tk.Frame):
             # Display saved plan immediately
             self.display_workout_plan(responses, is_saved_plan=True)
 
+        # Add this list as a class attribute
+        self.loading_sentences = [
+            "Mentally spotting you while the plan loads…",
+            "Consulting the workout oracle…",
+            "Resisting the urge to make you do burpees…",
+            "Counting imaginary kettlebells…",
+            "Updating your sweat forecast…",
+            "Telling your muscles what's about to happen… they're nervous.",
+            "Bribing the gym gods for a good session...",
+            "Whispering motivational quotes to your quads...",
+            "Plotting the shortest route to soreness.",
+            "Adding an extra rep just because we can.",
+            "Trying to remember where we left the dumbbells...",
+            "Slapping chalk on the keyboard for max effort.",
+            "Spying on your fridge for post-workout snack ideas...",
+            "Downloading just the right amount of pain.",
+            "Warming up your excuses—so we can destroy them.",
+            "Adjusting gravity to make push-ups harder (you're welcome).",
+            "Converting coffee into programming power…",
+            "Simulating slow-motion montages with epic music…",
+            "Applying motivational beard oil to the algorithm.",
+            "Arguing with your muscles about what they can handle.",
+            "Warning: Side effects may include confidence and soreness.",
+            "Just doing a few warm-up stretches… for the code.",
+            "Persuading the burpees to be nice today.",
+            "Measuring your willpower… it's above average!",
+            "Trying to make leg day sound fun… it's not working.",
+            "Convincing your abs to come out of hiding...",
+            "Running with scissors... safely. Almost done!",
+            "Trying to spell 'calisthenics' correctly. Still trying.",
+            "Summoning gym spirits with protein powder and WiFi.",
+            "Arguing with the server about how many reps you should do.",
+            "Poking your glutes to see if they're awake.",
+            "Unpacking your digital dumbbells...",
+            "Negotiating a truce between cardio and strength training.",
+            "Locating the motivation you lost last weekend.",
+            "Giving your goals a motivational pep talk."
+        ]
+        self.loading_sentence_indices = []
+        self.loading_sentence_label = None
+
     def show_loading_screen(self):
-        """Show the loading screen with progress bar"""
+        """Show the loading screen with progress bar and motivational sentences"""
         # Show loading frame only for new plans
         self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
         self.loading_frame.pack(fill="both", expand=True)
@@ -1022,6 +1064,16 @@ class WorkoutPlanPage(tk.Frame):
 
         # Start updating progress immediately
         self.update_progress_bar()
+
+        # Add the sentence label below the progress bar
+        self.loading_sentence_label = tk.Label(center_container, text="", font=("Helvetica", 13, "italic"), bg='#212529', fg='#eb5e28', wraplength=400, justify="center")
+        self.loading_sentence_label.pack(pady=(10, 0))
+        # Prepare a shuffled list of indices for random, non-repeating order
+        self.loading_sentence_indices = list(range(len(self.loading_sentences)))
+        random.shuffle(self.loading_sentence_indices)
+        self.loading_sentence_pointer = 0
+        self.loading_sentence_active = True
+        self.update_loading_sentence()
 
     def update_progress_bar(self):
         """Update the progress bar continuously"""
@@ -1163,10 +1215,12 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
             
             # Stop progress animation and display the plan
             self.is_generating = False
+            self.loading_sentence_active = False
             self.after(500, lambda: self.display_workout_plan(responses, is_saved_plan=True))
 
         except Exception as e:
             self.is_generating = False
+            self.loading_sentence_active = False
             error_label = tk.Label(
                 self.loading_frame,
                 text=f"Error generating plan: {str(e)}\nPlease try again.",
@@ -1544,6 +1598,25 @@ Error details: {str(e)}"""
 
         # Start new plan generation
         self.after(100, lambda: self.start_plan_generation(self.responses))
+
+    def update_loading_sentence(self):
+        """Show a new random, non-repeating sentence every 5 seconds while loading."""
+        if not getattr(self, 'loading_sentence_active', True):
+            return
+        if self.loading_sentence_pointer >= len(self.loading_sentence_indices):
+            # If we run out, reshuffle and start over (shouldn't happen in normal loading)
+            import random
+            self.loading_sentence_indices = list(range(len(self.loading_sentences)))
+            random.shuffle(self.loading_sentence_indices)
+            self.loading_sentence_pointer = 0
+        idx = self.loading_sentence_indices[self.loading_sentence_pointer]
+        self.loading_sentence_label.config(text=self.loading_sentences[idx])
+        self.loading_sentence_pointer += 1
+        # Only update if still generating
+        if getattr(self, 'is_generating', False):
+            self.after(5000, self.update_loading_sentence)
+        else:
+            self.loading_sentence_active = False
 
 
 class ExerciseInstructionPopup(tk.Toplevel):
