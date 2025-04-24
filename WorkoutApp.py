@@ -16,6 +16,7 @@ from googleapiclient.errors import HttpError
 import pandas as pd
 from typing import Dict, List, Optional
 import threading
+import re
 
 # Add rounded rectangle method to Canvas class
 def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
@@ -1621,83 +1622,56 @@ class ExerciseInstructionPopup(tk.Toplevel):
                                      lmargin2=25,
                                      justify="left")
 
-        # --- Formatting logic ---
-        sections = instructions.split('\n')
+        # --- Improved Formatting logic ---
+        import re
+        sections = [re.sub(r'[\*#]+', '', s).strip() for s in instructions.split('\n') if s.strip()]
+        numbered_heading = re.compile(r'^(\d+)\.\s*([A-Za-z ]{1,40}?)(:|\.)$')
         intro_lines = []
         outro_lines = []
         headings = []
         heading_indices = []
-        # Identify headings (numbered, max 6 words)
+        # Find all heading indices
         for idx, section in enumerate(sections):
-            s = section.strip()
-            if s and s[0].isdigit() and s[1] == '.' and (s.endswith(':') or s.endswith('.')):
-                words = s.split()
-                if len(words) <= 6:
-                    headings.append(s)
-                    heading_indices.append(idx)
+            if numbered_heading.match(section):
+                headings.append(section)
+                heading_indices.append(idx)
         # Find intro (before first heading)
         first_heading_idx = heading_indices[0] if heading_indices else None
         last_heading_idx = heading_indices[-1] if heading_indices else None
         # Collect intro lines
-        for idx, section in enumerate(sections):
-            if first_heading_idx is not None and idx < first_heading_idx:
-                if section.strip():
-                    intro_lines.append(section.strip())
-            elif first_heading_idx is None:
-                if section.strip():
-                    intro_lines.append(section.strip())
-        # Collect outro lines (after last heading and its bullets)
+        if first_heading_idx is not None:
+            intro_lines = sections[:first_heading_idx]
+        else:
+            intro_lines = sections[:]
+        # Collect outro lines (after last heading's bullets)
         if last_heading_idx is not None:
             # Find where the last heading's bullets end
-            after_last_heading = False
-            for idx, section in enumerate(sections):
-                if idx == last_heading_idx:
-                    after_last_heading = True
-                    continue
-                if after_last_heading:
-                    s = section.strip()
-                    # If it's a bullet (starts with dash or similar), skip
-                    if s.startswith('-') or s.startswith('•') or (s and not s[0].isdigit()):
-                        continue
-                    # If it's empty, skip
-                    if not s:
-                        continue
-                    # Otherwise, treat as outro
-                    outro_lines.append(s)
+            idx = last_heading_idx + 1
+            while idx < len(sections):
+                # If it's a heading, break
+                if numbered_heading.match(sections[idx]):
+                    break
+                idx += 1
+            outro_lines = sections[idx:]
         # Insert intro as normal paragraph
         if intro_lines:
             self.text_widget.insert("end", " ".join(intro_lines) + "\n\n", "normal")
         # Insert headings and their bullets
-        idx = 0
+        idx = first_heading_idx if first_heading_idx is not None else len(sections)
         while idx < len(sections):
-            section = sections[idx].strip()
-            # Remove markdown symbols
-            for sym in ['***', '**', '*', '###', '##', '#']:
-                section = section.replace(sym, '')
-            # Heading
-            if section and section[0].isdigit() and section[1] == '.' and (section.endswith(':') or section.endswith('.')):
-                words = section.split()
-                if len(words) <= 6:
-                    self.text_widget.insert("end", section + "\n", "header")
+            section = sections[idx]
+            if numbered_heading.match(section):
+                self.text_widget.insert("end", section + "\n", "header")
+                idx += 1
+                # Insert bullets under this heading
+                while idx < len(sections) and not numbered_heading.match(sections[idx]):
+                    bullet = sections[idx]
+                    # Only treat as bullet if not empty and not duplicate of heading
+                    if bullet and bullet != section:
+                        self.text_widget.insert("end", "• " + bullet + "\n", "bullet")
                     idx += 1
-                    # Insert bullets under this heading
-                    while idx < len(sections):
-                        bullet = sections[idx].strip()
-                        # Remove markdown symbols
-                        for sym in ['***', '**', '*', '###', '##', '#']:
-                            bullet = bullet.replace(sym, '')
-                        if bullet.startswith('-') or bullet.startswith('•'):
-                            bullet_text = bullet.lstrip('-•').strip()
-                            self.text_widget.insert("end", "• " + bullet_text + "\n", "bullet")
-                            idx += 1
-                        elif bullet and not (bullet[0].isdigit() and bullet[1] == '.' and (bullet.endswith(':') or bullet.endswith('.'))):
-                            # Sometimes bullets are not marked, treat as bullet if not a heading
-                            self.text_widget.insert("end", "• " + bullet + "\n", "bullet")
-                            idx += 1
-                        else:
-                            break
-                    continue
-            idx += 1
+            else:
+                idx += 1
         # Insert outro as normal paragraph
         if outro_lines:
             self.text_widget.insert("end", "\n" + " ".join(outro_lines) + "\n", "normal")
