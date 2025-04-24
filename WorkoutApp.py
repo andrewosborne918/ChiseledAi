@@ -944,38 +944,7 @@ class WorkoutPlanPage(tk.Frame):
         self.progress_value = 0
         self.is_generating = False
 
-        # Create main container
-        self.main_container = tk.Frame(self, padx=40, pady=40, bg='#212529')
-        self.main_container.pack(fill="both", expand=True)
-
-        # Create title frame
-        self.title_frame = tk.Frame(self.main_container, bg='#212529', padx=10)
-        self.title_frame.pack(fill="x", pady=(0, 20))
-
-        self.main_title_label = tk.Label(self.title_frame, text="CHISELED AI",
-                                         font=("Impact", 50), bg='#212529', fg='#eb5e28', wraplength=300)
-        self.main_title_label.pack()
-
-        self.main_subtitle_label = tk.Label(self.title_frame, text="YOUR PERSONAL WORKOUT PLANNER",
-                                            font=("Helvetica", 14), bg='#212529', fg='white', wraplength=300)
-        self.main_subtitle_label.pack()
-
-        # Create plan container
-        self.plan_container = tk.Frame(self.main_container, bg='#212529', padx=10)
-        self.plan_container.pack(fill="both", expand=True, pady=20)
-
-        # Check if this is a saved plan
-        is_saved_plan = 'plan_text' in responses and 'timestamp' in responses
-
-        if not is_saved_plan:
-            self.show_loading_screen()
-            # Start plan generation in a background thread
-            self.after(100, lambda: self.start_plan_generation(responses))
-        else:
-            # Display saved plan immediately
-            self.display_workout_plan(responses, is_saved_plan=True)
-
-        # Add this list as a class attribute
+        # Define loading_sentences and related attributes FIRST
         self.loading_sentences = [
             "Mentally spotting you while the plan loads…",
             "Consulting the workout oracle…",
@@ -1015,7 +984,7 @@ class WorkoutPlanPage(tk.Frame):
             "Sifting through thousands of burpees to find the perfect one for you...",
             "Politely asking your muscles to rise and shine.",
             "Debating whether or not to include mountain climbers.",
-            "Disabling the ‘skip leg day’ button. For your own good.",
+            "Disabling the ‘skip leg day' button. For your own good.",
             "Translating sweat into results...",
             "Slapping high-fives to imaginary gym buddies.",
             "Fetching water bottles and good intentions…",
@@ -1031,15 +1000,46 @@ class WorkoutPlanPage(tk.Frame):
             "Programming soreness into your future.",
             "Scouting the internet for motivational quotes… and snacks.",
             "Looking for lost gains… please wait.",
-            "Putting the ‘ow’ in ‘workout.’",
+            "Putting the ‘ow' in 'workout.'",
             "Downloading gym grunts and beast mode.",
             "Powerlifting your routine into existence.",
-            "Calculating the precise moment you’ll start questioning your life choices.",
+            "Calculating the precise moment you'll start questioning your life choices.",
             "Just one more second… and then another rep.",
-            "Your future self is cheering. We’re just stalling for dramatic effect."
+            "Your future self is cheering. We're just stalling for dramatic effect."
         ]
         self.loading_sentence_indices = []
         self.loading_sentence_label = None
+
+        # Create main container
+        self.main_container = tk.Frame(self, padx=40, pady=40, bg='#212529')
+        self.main_container.pack(fill="both", expand=True)
+
+        # Create title frame
+        self.title_frame = tk.Frame(self.main_container, bg='#212529', padx=10)
+        self.title_frame.pack(fill="x", pady=(0, 20))
+
+        self.main_title_label = tk.Label(self.title_frame, text="CHISELED AI",
+                                         font=("Impact", 50), bg='#212529', fg='#eb5e28', wraplength=300)
+        self.main_title_label.pack()
+
+        self.main_subtitle_label = tk.Label(self.title_frame, text="YOUR PERSONAL WORKOUT PLANNER",
+                                            font=("Helvetica", 14), bg='#212529', fg='white', wraplength=300)
+        self.main_subtitle_label.pack()
+
+        # Create plan container
+        self.plan_container = tk.Frame(self.main_container, bg='#212529', padx=10)
+        self.plan_container.pack(fill="both", expand=True, pady=20)
+
+        # Check if this is a saved plan
+        is_saved_plan = 'plan_text' in responses and 'timestamp' in responses
+
+        if not is_saved_plan:
+            self.show_loading_screen()
+            # Start plan generation in a background thread
+            self.after(100, lambda: self.start_plan_generation(responses))
+        else:
+            # Display saved plan immediately
+            self.display_workout_plan(responses, is_saved_plan=True)
 
     def show_loading_screen(self):
         """Show the loading screen with progress bar and motivational sentences, responsive for small screens."""
