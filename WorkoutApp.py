@@ -1055,38 +1055,39 @@ class WorkoutPlanPage(tk.Frame):
 
         # Use pack with fill and expand for all containers
         center_container = tk.Frame(self.loading_frame, bg='#212529')
-        center_container.pack(fill="both", expand=True)
+        center_container.pack(expand=True, fill="both")
 
-        # Title
-        self.loading_title_label = tk.Label(center_container, text="CHISELED AI", font=title_font, bg='#212529', fg='#eb5e28', wraplength=wraplength, justify="left", anchor="w")
-        self.loading_title_label.pack(fill="x")
+        # Remove the extra loading_title_label (do not create or pack it)
+
+        # Centered loading label
         self.loading_label = tk.Label(
             center_container,
             text="Generating your personalized workout plan...",
             font=("Helvetica", 16),
             bg='#212529',
             fg='white',
-            justify="left",
-            anchor="w"
+            justify="center",
+            anchor="center"
         )
-        self.loading_label.pack(fill="x")
+        self.loading_label.pack(pady=(0, 20), anchor="center")
 
-        # Create progress bar container
+        # Centered progress bar container
         progress_container = tk.Frame(center_container, bg='#212529')
-        progress_container.pack(fill="x")
+        progress_container.pack(anchor="center")
 
-        # Create progress bar using Canvas, dynamic width
-        progress_width = center_container.winfo_width() if center_container.winfo_width() > 0 else 300
+        # Centered progress bar using Canvas, dynamic width
+        progress_width = 300
         self.progress_canvas = tk.Canvas(
             progress_container,
+            width=progress_width,
             height=20,
             bg='#212529',
             highlightthickness=0
         )
-        self.progress_canvas.pack(fill="x")
+        self.progress_canvas.pack()
 
         def update_progress_bar_width(event=None):
-            width = progress_container.winfo_width()
+            width = min(center_container.winfo_width(), 400)
             if width < 100:
                 width = 100
             self.progress_canvas.config(width=width)
@@ -1097,20 +1098,12 @@ class WorkoutPlanPage(tk.Frame):
                 outline='#eb5e28',
                 width=2
             )
-        progress_container.bind("<Configure>", update_progress_bar_width)
+        center_container.bind("<Configure>", update_progress_bar_width)
         update_progress_bar_width()
 
-        # Initialize progress variables
-        self.progress_value = 0
-        self.start_time = time.time()
-        self.is_generating = True
-
-        # Start updating progress immediately
-        self.update_progress_bar()
-
-        # Add the sentence label below the progress bar
-        self.loading_sentence_label = tk.Label(center_container, text="", font=("Helvetica", 13, "italic"), bg='#212529', fg='#eb5e28', wraplength=400, justify="left", anchor="w")
-        self.loading_sentence_label.pack(fill="x")
+        # Centered loading sentence label
+        self.loading_sentence_label = tk.Label(center_container, text="", font=("Helvetica", 13, "italic"), bg='#212529', fg='#eb5e28', wraplength=400, justify="center", anchor="center")
+        self.loading_sentence_label.pack(pady=(10, 0), anchor="center")
 
         def update_sentence_wrap(event=None):
             width = center_container.winfo_width()
@@ -1121,12 +1114,13 @@ class WorkoutPlanPage(tk.Frame):
         center_container.bind("<Configure>", update_sentence_wrap)
         update_sentence_wrap()
 
-        # Prepare a shuffled list of indices for random, non-repeating order
-        self.loading_sentence_indices = list(range(len(self.loading_sentences)))
-        random.shuffle(self.loading_sentence_indices)
-        self.loading_sentence_pointer = 0
-        self.loading_sentence_active = True
-        self.update_loading_sentence()
+        # Initialize progress variables
+        self.progress_value = 0
+        self.start_time = time.time()
+        self.is_generating = True
+
+        # Start updating progress immediately
+        self.update_progress_bar()
 
     def update_progress_bar(self):
         """Update the progress bar continuously"""
