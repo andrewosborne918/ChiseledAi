@@ -1012,8 +1012,8 @@ class WorkoutPlanPage(tk.Frame):
         # Force an immediate update
         self.update_idletasks()
         
-        # Start the animation with a small delay to ensure the UI is ready
-        self.after(50, self.animate_progress)
+        # Start the animation immediately
+        self.animate_progress()
 
     def animate_progress(self):
         """Animate the progress bar based on elapsed time"""
