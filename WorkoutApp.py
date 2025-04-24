@@ -274,7 +274,7 @@ class WorkoutApp(tk.Tk):
                 if hasattr(self.workout_plan_page, 'main_subtitle_label'):
                     self.workout_plan_page.main_subtitle_label.config(wraplength=wrap)
                 # Responsive plan page buttons
-                if hasattr(self.workout_plan_page, 'refresh_canvas') and hasattr(self.workout_plan_page, 'refresh_label'):
+                if hasattr(self.workout_plan_page, 'refresh_canvas') and self.workout_plan_page.refresh_canvas.winfo_exists():
                     # Make buttons even smaller on small screens
                     if width < 450:
                         btn_w = 80
@@ -288,10 +288,11 @@ class WorkoutApp(tk.Tk):
                     self.workout_plan_page.refresh_canvas.config(width=btn_w, height=btn_h)
                     self.workout_plan_page.refresh_canvas.delete("all")
                     self.workout_plan_page.refresh_canvas.create_rounded_rect(0, 0, btn_w, btn_h, 8, fill='#212529', outline='#eb5e28', width=2)
-                    self.workout_plan_page.refresh_label.config(font=btn_font)
-                    self.workout_plan_page.refresh_label.place(relx=0.5, rely=0.5, anchor="center")
+                    if hasattr(self.workout_plan_page, 'refresh_label') and self.workout_plan_page.refresh_label.winfo_exists():
+                        self.workout_plan_page.refresh_label.config(font=btn_font)
+                        self.workout_plan_page.refresh_label.place(relx=0.5, rely=0.5, anchor="center")
                     # Update new plan button
-                    if hasattr(self.workout_plan_page, 'new_plan_canvas') and hasattr(self.workout_plan_page, 'new_plan_label'):
+                    if hasattr(self.workout_plan_page, 'new_plan_canvas') and self.workout_plan_page.new_plan_canvas.winfo_exists() and hasattr(self.workout_plan_page, 'new_plan_label') and self.workout_plan_page.new_plan_label.winfo_exists():
                         self.workout_plan_page.new_plan_canvas.config(width=btn_w, height=btn_h)
                         self.workout_plan_page.new_plan_canvas.delete("all")
                         self.workout_plan_page.new_plan_canvas.create_rounded_rect(0, 0, btn_w, btn_h, 8, fill='#eb5e28', outline='#eb5e28')
@@ -1100,15 +1101,13 @@ class WorkoutPlanPage(tk.Frame):
         update_progress_bar_width()
 
         # Centered loading sentence label
-        self.loading_sentence_label = tk.Label(center_container, text="", font=("Helvetica", 13, "italic"), bg='#212529', fg='#eb5e28', wraplength=400, justify="center")
-        self.loading_sentence_label.pack(pady=(10, 0), fill="x")
+        self.loading_sentence_label = tk.Label(center_container, text="", font=("Helvetica", 13, "italic"), bg='#212529', fg='#eb5e28', justify="center")
+        self.loading_sentence_label.pack(pady=(10, 0), anchor="center")
 
         def update_sentence_wrap(event=None):
             width = center_container.winfo_width()
-            if width > 200:
-                self.loading_sentence_label.config(wraplength=width - 100)
-            else:
-                self.loading_sentence_label.config(wraplength=width)
+            wrap = max(400, width - 60)
+            self.loading_sentence_label.config(wraplength=wrap)
         center_container.bind("<Configure>", update_sentence_wrap)
         update_sentence_wrap()
 
@@ -1117,6 +1116,7 @@ class WorkoutPlanPage(tk.Frame):
         random.shuffle(self.loading_sentence_indices)
         self.loading_sentence_pointer = 0
         self.loading_sentence_active = True
+        self.is_generating = True
         self.update_loading_sentence()
 
         # --- RESPONSIVE PROGRESS BAR ---
