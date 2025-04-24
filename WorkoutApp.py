@@ -1059,11 +1059,11 @@ class WorkoutPlanPage(tk.Frame):
         bar_inner_radius = 6 if is_small else 9
         sentence_font = ("Helvetica", 10, "italic") if is_small else ("Helvetica", 13, "italic")
         wraplength = 220 if is_small else 400
-        pady_logo = (10, 10) if is_small else (0, 20)
-        pady_sentence = (6, 0) if is_small else (10, 0)
+        pady_logo = (0, 0)
+        pady_sentence = (0, 0)
 
         # Create a container to center the content vertically
-        center_container = tk.Frame(self.loading_frame, bg='#212529')
+        center_container = tk.Frame(self.loading_frame, bg='#212529', padx=0, pady=0)
         center_container.place(relx=0.5, rely=0.4, anchor="center")
 
         # Title
@@ -1075,11 +1075,11 @@ class WorkoutPlanPage(tk.Frame):
             bg='#212529',
             fg='white'
         )
-        self.loading_label.pack(pady=(0, 20))
+        self.loading_label.pack(pady=(0, 0))
 
         # Create progress bar container
-        progress_container = tk.Frame(center_container, bg='#212529')
-        progress_container.pack(fill="x", padx=20)
+        progress_container = tk.Frame(center_container, bg='#212529', padx=0, pady=0)
+        progress_container.pack(fill="x", padx=0, pady=0)
 
         # Create progress bar using Canvas
         self.progress_canvas = tk.Canvas(
@@ -1089,7 +1089,7 @@ class WorkoutPlanPage(tk.Frame):
             bg='#212529',
             highlightthickness=0
         )
-        self.progress_canvas.pack(pady=10)
+        self.progress_canvas.pack(pady=0)
 
         # Draw progress bar background
         self.progress_canvas.create_rounded_rect(
@@ -1109,7 +1109,20 @@ class WorkoutPlanPage(tk.Frame):
 
         # Add the sentence label below the progress bar
         self.loading_sentence_label = tk.Label(center_container, text="", font=("Helvetica", 13, "italic"), bg='#212529', fg='#eb5e28', wraplength=400, justify="center")
-        self.loading_sentence_label.pack(pady=(10, 0))
+        self.loading_sentence_label.pack(pady=(0, 0), fill="x")
+
+        def update_sentence_wrap(event=None):
+            # Set wraplength to the width of the center_container minus some padding
+            width = center_container.winfo_width()
+            if width > 40:
+                self.loading_sentence_label.config(wraplength=width - 40)
+            else:
+                self.loading_sentence_label.config(wraplength=width)
+
+        center_container.bind("<Configure>", update_sentence_wrap)
+        # Call once to set initial wraplength
+        update_sentence_wrap()
+
         # Prepare a shuffled list of indices for random, non-repeating order
         self.loading_sentence_indices = list(range(len(self.loading_sentences)))
         random.shuffle(self.loading_sentence_indices)
