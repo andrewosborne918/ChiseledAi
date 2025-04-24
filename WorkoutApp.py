@@ -1068,7 +1068,7 @@ class WorkoutPlanPage(tk.Frame):
             justify="center",
             anchor="center"
         )
-        self.loading_label.pack(pady=(0, 20), anchor="center")
+        self.loading_label.pack(pady=(0, 20), fill="x")
 
         # Centered progress bar container
         progress_container = tk.Frame(center_container, bg='#212529')
@@ -1100,13 +1100,13 @@ class WorkoutPlanPage(tk.Frame):
         center_container.bind("<Configure>", update_progress_bar_width)
         update_progress_bar_width()
 
-        # Centered loading sentence label
+        # Centered loading sentence label, always horizontal and centered
         self.loading_sentence_label = tk.Label(center_container, text="", font=("Helvetica", 13, "italic"), bg='#212529', fg='#eb5e28', justify="center")
         self.loading_sentence_label.pack(pady=(10, 0), anchor="center")
 
         def update_sentence_wrap(event=None):
             width = center_container.winfo_width()
-            wrap = max(400, width - 60)
+            wrap = min(max(400, width - 60), 700)
             self.loading_sentence_label.config(wraplength=wrap)
         center_container.bind("<Configure>", update_sentence_wrap)
         update_sentence_wrap()
