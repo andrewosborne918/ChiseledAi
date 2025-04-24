@@ -643,19 +643,21 @@ class WorkoutFocus(tk.Frame):
         self.muscle_label = tk.Label(self.muscle_frame, text="Which muscle groups?",
                  font=("Helvetica", 14, "bold"), bg='#212529', fg='white', wraplength=400)
         self.muscle_label.pack(anchor="w", pady=5)
-        # For each group, add a label and checkboxes
-        for group_name, muscles in body_parts.items():
-            group_label = tk.Label(self.muscle_frame, text=group_name,
-                                   font=("Helvetica", 13, "bold"), bg='#212529', fg='#eb5e28', wraplength=400)
-            group_label.pack(anchor="w", pady=(10, 2))
-            group_checkbox_frame = tk.Frame(self.muscle_frame, bg='#212529')
-            group_checkbox_frame.pack(fill="x", padx=10)
+        # Create a row frame for columns
+        self.muscle_row = tk.Frame(self.muscle_frame, bg='#212529')
+        self.muscle_row.pack(fill="x", pady=5)
+        for col, (group_name, muscles) in enumerate(body_parts.items()):
+            col_frame = tk.Frame(self.muscle_row, bg='#212529')
+            col_frame.grid(row=0, column=col, padx=10, sticky="n")
+            group_label = tk.Label(col_frame, text=group_name,
+                                   font=("Helvetica", 13, "bold"), bg='#212529', fg='#eb5e28', wraplength=150)
+            group_label.pack(anchor="w", pady=(0, 2))
             for muscle in muscles:
                 var = tk.BooleanVar()
                 self.app.muscle_vars[muscle] = var
-                tk.Checkbutton(group_checkbox_frame, text=muscle, variable=var,
+                tk.Checkbutton(col_frame, text=muscle, variable=var,
                                command=lambda: None, font=("Helvetica", 12),
-                               bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
+                               bg='#212529', fg='white', wraplength=140, anchor="w", justify="left").pack(anchor="w", pady=2)
 
     def on_focus_change(self, event=None):
         if self.app.focus_var.get() == "Target muscle group":
