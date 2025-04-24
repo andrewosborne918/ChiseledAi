@@ -852,7 +852,7 @@ class InjuryRestrictions(tk.Frame):
         # Create a frame for radio buttons
         self.radio_frame = tk.Frame(self.center_frame, bg='#212529')
         self.radio_frame.pack(fill="x", pady=10)
-
+        
         # Create radio buttons
         for option in ["No", "Yes"]:
             tk.Radiobutton(self.radio_frame, text=option, variable=app.injury_var, value=option,
