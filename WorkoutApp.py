@@ -1006,20 +1006,21 @@ class WorkoutPlanPage(tk.Frame):
 
         # Reset and start progress animation immediately
         self.progress_value = 0
+        self.start_time = time.time()
         self.is_generating = True
         self.animate_progress()
         # Force an immediate update
         self.update_idletasks()
 
     def animate_progress(self):
-        """Animate the progress bar"""
+        """Animate the progress bar based on elapsed time"""
         if not self.is_generating:
             return
 
-        # Update progress bar
-        self.progress_value += 1  # Increased speed
-        if self.progress_value > 100:
-            self.progress_value = 0
+        # Calculate progress based on time (12 seconds to reach 95%)
+        elapsed_time = time.time() - self.start_time
+        target_progress = min(95, (elapsed_time / 12.0) * 95)
+        self.progress_value = target_progress
 
         # Calculate width of progress fill
         width = (self.progress_value / 100) * 296
@@ -1032,8 +1033,9 @@ class WorkoutPlanPage(tk.Frame):
             outline=''
         )
 
-        # Continue animation with faster updates
-        self.after(30, self.animate_progress)  # Decreased delay for smoother animation
+        # Continue animation if not at 95%
+        if self.progress_value < 95:
+            self.after(16, self.animate_progress)  # ~60 FPS update rate
 
     def generate_and_display_plan(self, responses):
         """Generate the plan and update the display with progress bar"""
@@ -1135,12 +1137,21 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
             responses['timestamp'] = current_time.strftime("%B %d, %Y | %I:%M%p").replace("AM", "am").replace("PM", "pm")
             self.app.save_workout_plan(responses)
 
+            # When plan is ready, complete the progress bar
+            self.progress_value = 100
+            width = 296  # Full width
+            self.progress_canvas.delete(self.progress_fill)
+            self.progress_fill = self.progress_canvas.create_rounded_rect(
+                2, 2, width + 2, 18, 9,
+                fill='#eb5e28',
+                outline=''
+            )
+            
             # Stop progress animation and display the plan
             self.is_generating = False
             self.after(500, lambda: self.display_workout_plan(responses, is_saved_plan=True))
 
         except Exception as e:
-            # Handle any errors during generation
             self.is_generating = False
             error_label = tk.Label(
                 self.loading_frame,
@@ -1570,25 +1581,47 @@ class ExerciseInstructionPopup(tk.Toplevel):
 
         # Process and insert the instructions with formatting
         sections = instructions.split('\n')
+        current_section = None
+        bullet_content = []
+        
         for section in sections:
             section = section.strip()
             if not section:
-                self.text_widget.insert("end", "\n")
+                # If we have bullet content, insert it
+                if bullet_content:
+                    for bullet in bullet_content:
+                        self.text_widget.insert("end", f"• {bullet}\n", "normal")
+                    bullet_content = []
+                    self.text_widget.insert("end", "\n")
                 continue
 
             # Remove markdown symbols while preserving content
-            section = section.replace('**', '')  # Remove bold markers
-            section = section.replace('*', '')   # Remove italic markers
-            section = section.replace('###', '') # Remove H3 markers
-            section = section.replace('##', '')  # Remove H2 markers
-            section = section.replace('#', '')   # Remove H1 markers
+            section = section.replace('**', '')
+            section = section.replace('*', '')
+            section = section.replace('###', '')
+            section = section.replace('##', '')
+            section = section.replace('#', '')
             
             if section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')):
-                # Main section headers
+                # If we have bullet content from previous section, insert it
+                if bullet_content:
+                    for bullet in bullet_content:
+                        self.text_widget.insert("end", f"• {bullet}\n", "normal")
+                    bullet_content = []
+                    self.text_widget.insert("end", "\n")
+                
+                # Insert section header
                 self.text_widget.insert("end", f"{section}\n", "header")
+                current_section = section.split('.')[0]
             else:
-                # All other text as normal paragraphs
-                self.text_widget.insert("end", f"{section}\n", "normal")
+                # Add content to bullet points
+                if section.strip():
+                    bullet_content.append(section.strip())
+
+        # Insert any remaining bullet content
+        if bullet_content:
+            for bullet in bullet_content:
+                self.text_widget.insert("end", f"• {bullet}\n", "normal")
 
         # Make text widget read-only
         self.text_widget.config(state="disabled")
