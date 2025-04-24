@@ -1057,8 +1057,6 @@ class WorkoutPlanPage(tk.Frame):
         center_container = tk.Frame(self.loading_frame, bg='#212529')
         center_container.pack(expand=True, fill="both")
 
-        # Remove the extra loading_title_label (do not create or pack it)
-
         # Centered loading label
         self.loading_label = tk.Label(
             center_container,
@@ -1114,6 +1112,33 @@ class WorkoutPlanPage(tk.Frame):
         center_container.bind("<Configure>", update_sentence_wrap)
         update_sentence_wrap()
 
+        # --- MOTIVATIONAL SENTENCE CYCLING ---
+        self.loading_sentence_indices = list(range(len(self.loading_sentences)))
+        random.shuffle(self.loading_sentence_indices)
+        self.loading_sentence_pointer = 0
+        self.loading_sentence_active = True
+        self.update_loading_sentence()
+
+        # --- RESPONSIVE PROGRESS BAR ---
+        def get_bar_width():
+            avail = center_container.winfo_width()
+            if avail <= 0:
+                return 300
+            return max(200, min(int(avail * 0.8), 600))
+
+        def update_progress_bar_width(event=None):
+            width = get_bar_width()
+            self.progress_canvas.config(width=width)
+            self.progress_canvas.delete("all")
+            self.progress_canvas.create_rounded_rect(
+                0, 0, width, 20, 10,
+                fill='#2b3035',
+                outline='#eb5e28',
+                width=2
+            )
+        center_container.bind("<Configure>", update_progress_bar_width)
+        update_progress_bar_width()
+
         # Initialize progress variables
         self.progress_value = 0
         self.start_time = time.time()
@@ -1130,14 +1155,14 @@ class WorkoutPlanPage(tk.Frame):
         # Calculate elapsed time and progress
         elapsed = time.time() - self.start_time
         self.progress_value = min(95, (elapsed / 65.0) * 95)  # 12 seconds to reach 95%
-        
-        # Calculate width of progress fill
-        width = (self.progress_value / 100) * 296
+        # Get current width of progress bar
+        bar_width = self.progress_canvas.winfo_width()
+        fill_width = (self.progress_value / 100) * (bar_width - 4)
 
         # Update progress bar fill
         self.progress_canvas.delete('progress_fill')
         self.progress_fill = self.progress_canvas.create_rounded_rect(
-            2, 2, width + 2, 18, 9,
+            2, 2, fill_width + 2, 18, 9,
             fill='#eb5e28',
             outline='',
             tags='progress_fill'
