@@ -997,48 +997,38 @@ class WorkoutPlanPage(tk.Frame):
             width=2
         )
 
-        # Draw initial progress bar fill
-        self.progress_fill = self.progress_canvas.create_rounded_rect(
-            2, 2, 4, 18, 9,
-            fill='#eb5e28',
-            outline=''
-        )
-
         # Initialize progress variables
         self.progress_value = 0
-        self.last_update = time.time()
+        self.start_time = time.time()
         self.is_generating = True
 
-        # Schedule the first update immediately
-        self.after(0, self.update_progress)
-
-    def update_progress(self):
-        """Update the progress bar animation frame"""
+        # Start updating progress immediately
+        self.update_progress_bar()
+        
+    def update_progress_bar(self):
+        """Update the progress bar continuously"""
         if not self.is_generating:
             return
 
-        current_time = time.time()
-        elapsed = current_time - self.last_update
-        self.last_update = current_time
-
-        # Update progress (aim to complete in about 12 seconds)
-        increment = (elapsed * 95.0) / 12.0  # 95% is the target maximum
-        self.progress_value = min(95, self.progress_value + increment)
-
+        # Calculate elapsed time and progress
+        elapsed = time.time() - self.start_time
+        self.progress_value = min(95, (elapsed / 12.0) * 95)  # 12 seconds to reach 95%
+        
         # Calculate width of progress fill
         width = (self.progress_value / 100) * 296
 
         # Update progress bar fill
-        self.progress_canvas.delete(self.progress_fill)
+        self.progress_canvas.delete('progress_fill')
         self.progress_fill = self.progress_canvas.create_rounded_rect(
             2, 2, width + 2, 18, 9,
             fill='#eb5e28',
-            outline=''
+            outline='',
+            tags='progress_fill'
         )
 
-        # Schedule next update
+        # Continue updating if not at 95%
         if self.progress_value < 95:
-            self.after(16, self.update_progress)  # ~60 FPS
+            self.after(16, self.update_progress_bar)  # Update at ~60 FPS
 
     def generate_and_display_plan(self, responses):
         """Generate the plan and update the display with progress bar"""
