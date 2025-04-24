@@ -68,7 +68,7 @@ def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
             self.create_polygon(inner_points, smooth=True, fill=fill_color, outline='', **kwargs)
     else:
         # Create single polygon if no width specified
-        return self.create_polygon(points, smooth=True, **kwargs)
+    return self.create_polygon(points, smooth=True, **kwargs)
 
     return self.find_all()[-1]
 
@@ -122,9 +122,9 @@ def get_youtube_video(exercise_name):
             return video_url, "YouTube"
         else:
             # Fallback to search URL if no direct video found
-            search_url = f"https://www.youtube.com/results?search_query={search_query.replace(' ', '+')}"
-            logging.info(f"Using YouTube search URL for {exercise_name}: {search_url}")
-            return search_url, "YouTube Search"
+        search_url = f"https://www.youtube.com/results?search_query={search_query.replace(' ', '+')}"
+        logging.info(f"Using YouTube search URL for {exercise_name}: {search_url}")
+        return search_url, "YouTube Search"
     except Exception as e:
         logging.error(f"Error getting video URL for {exercise_name}: {e}")
         search_url = f"https://www.youtube.com/results?search_query={search_query.replace(' ', '+')}"
@@ -521,7 +521,7 @@ class WorkoutApp(tk.Tk):
 
             # Draw rounded rectangle
             self.submit_canvas.create_rounded_rect(0, 0, button_width, button_height, 8,
-                                                fill='#eb5e28', outline='#eb5e28')
+                                fill='#eb5e28', outline='#eb5e28')
 
             # Create the label on top of the canvas
             self.submit_label = tk.Label(
@@ -852,7 +852,7 @@ class InjuryRestrictions(tk.Frame):
         # Create a frame for radio buttons
         self.radio_frame = tk.Frame(self.center_frame, bg='#212529')
         self.radio_frame.pack(fill="x", pady=10)
-        
+
         # Create radio buttons
         for option in ["No", "Yes"]:
             tk.Radiobutton(self.radio_frame, text=option, variable=app.injury_var, value=option,
@@ -958,21 +958,21 @@ class WorkoutPlanPage(tk.Frame):
 
     def show_loading_screen(self):
         """Show the loading screen with progress bar"""
-        # Show loading frame only for new plans
-        self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
-        self.loading_frame.pack(fill="both", expand=True)
+            # Show loading frame only for new plans
+            self.loading_frame = tk.Frame(self.plan_container, bg='#212529')
+            self.loading_frame.pack(fill="both", expand=True)
 
         # Create a container to center the content vertically
         center_container = tk.Frame(self.loading_frame, bg='#212529')
         center_container.place(relx=0.5, rely=0.4, anchor="center")
 
-        self.loading_label = tk.Label(
+            self.loading_label = tk.Label(
             center_container,
-            text="Generating your personalized workout plan...",
-            font=("Helvetica", 16),
-            bg='#212529',
-            fg='white'
-        )
+                text="Generating your personalized workout plan...",
+                font=("Helvetica", 16),
+                bg='#212529',
+                fg='white'
+            )
         self.loading_label.pack(pady=(0, 20))
 
         # Create progress bar container
@@ -984,7 +984,7 @@ class WorkoutPlanPage(tk.Frame):
             progress_container,
             width=300,
             height=20,
-            bg='#212529',
+                bg='#212529',
             highlightthickness=0
         )
         self.progress_canvas.pack(pady=10)
@@ -1121,14 +1121,14 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
 
             # Store the exercise instructions in the responses dictionary
             responses['exercise_instructions'] = exercise_instructions
-            
-            # Save the generated plan
+
+        # Save the generated plan
             plan = '\n'.join(processed_lines)
-            responses['plan_text'] = plan
-            from datetime import datetime
-            current_time = datetime.now()
-            responses['timestamp'] = current_time.strftime("%B %d, %Y | %I:%M%p").replace("AM", "am").replace("PM", "pm")
-            self.app.save_workout_plan(responses)
+        responses['plan_text'] = plan
+        from datetime import datetime
+        current_time = datetime.now()
+        responses['timestamp'] = current_time.strftime("%B %d, %Y | %I:%M%p").replace("AM", "am").replace("PM", "pm")
+        self.app.save_workout_plan(responses)
 
             # When plan is ready, complete the progress bar
             self.progress_value = 100
@@ -1262,10 +1262,10 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
                                                foreground="#4dabf7", underline=1)
                     
                     # Insert the exercise name
-                    start_index = self.plan_text.index("end-1c")
+                start_index = self.plan_text.index("end-1c")
                     self.plan_text.insert("end", exercise_name)
-                    end_index = self.plan_text.index("end-1c")
-                    
+                end_index = self.plan_text.index("end-1c")
+
                     # Apply the tag
                     self.plan_text.tag_add(tag_name, start_index, end_index)
                     
@@ -1292,10 +1292,10 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
             elif line.startswith('-'):
                 # Bullet point
                 bullet_text = line.lstrip('-').strip()
-                self.plan_text.insert("end", "• " + bullet_text + "\n", "bullet")
+                    self.plan_text.insert("end", "• " + bullet_text + "\n", "bullet")
             else:
                 # Normal text
-                self.plan_text.insert("end", line + "\n", "normal")
+                    self.plan_text.insert("end", line + "\n", "normal")
 
         # Make it read-only
         self.plan_text.config(state="disabled")
@@ -1315,7 +1315,7 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
         self.refresh_canvas.pack(side="left", padx=10)
         self.refresh_canvas.create_rounded_rect(0, 0, 150, 40, 8,
                                               fill='#212529', outline='#eb5e28', width=2)
-        self.refresh_label = tk.Label(self.refresh_canvas, text="Refresh Plan",
+        self.refresh_label = tk.Label(self.refresh_canvas, text="Refresh Plan", 
                                     font=("Helvetica", 12, "bold"),
                                     bg='#212529', fg='white')
         self.refresh_label.place(relx=0.5, rely=0.5, anchor="center")
@@ -1345,7 +1345,7 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
         # Create new plan button (full orange)
         self.new_plan_canvas = tk.Canvas(button_frame, width=150, height=40,
                                        bg='#212529', highlightthickness=0)
-        self.new_plan_canvas.pack(side="left", padx=10)
+            self.new_plan_canvas.pack(side="left", padx=10)
         self.new_plan_canvas.create_rounded_rect(0, 0, 150, 40, 8,
                                                fill='#eb5e28', outline='#eb5e28')
         self.new_plan_label = tk.Label(self.new_plan_canvas, text="New Plan",
@@ -1442,13 +1442,13 @@ Format the plan in a clear, easy-to-follow structure with each exercise name in 
             lines = plan_text.split('\n')
             processed_lines = []
             exercise_instructions = {}
-            
+
             for line in lines:
                 line = line.strip()
                 
                 # Skip empty lines
                 if not line:
-                    processed_lines.append(line)
+                        processed_lines.append(line)
                     continue
 
                 # Check for exercise names in square brackets
@@ -1476,7 +1476,7 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
                             if instruction_response and instruction_response.text:
                                 exercise_instructions[exercise_name] = instruction_response.text.strip()
                                 logging.info(f"Generated instructions for {exercise_name}")
-                            else:
+                else:
                                 exercise_instructions[exercise_name] = "Instructions not available."
                                 logging.warning(f"No instructions generated for {exercise_name}")
                         except Exception as e:
@@ -1484,11 +1484,11 @@ Keep the instructions clear and concise, focusing on proper form and safety."""
                             logging.error(f"Error generating instructions for {exercise_name}: {e}")
 
                 # Add the line as is
-                processed_lines.append(line)
+                    processed_lines.append(line)
 
             # Store the exercise instructions in the responses dictionary
             responses['exercise_instructions'] = exercise_instructions
-            
+
             return '\n'.join(processed_lines)
 
         except Exception as e:
