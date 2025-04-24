@@ -1581,8 +1581,8 @@ class ExerciseInstructionPopup(tk.Toplevel):
 
         # Process and insert the instructions with formatting
         sections = instructions.split('\n')
-        current_section = None
         bullet_content = []
+        first_heading = True  # Flag to track if the first heading has been added
         
         for section in sections:
             section = section.strip()
@@ -1592,10 +1592,10 @@ class ExerciseInstructionPopup(tk.Toplevel):
                     for bullet in bullet_content:
                         self.text_widget.insert("end", f"• {bullet}\n", "normal")
                     bullet_content = []
-                    self.text_widget.insert("end", "\n")
                 continue
 
             # Remove markdown symbols while preserving content
+            section = section.replace('***', '')
             section = section.replace('**', '')
             section = section.replace('*', '')
             section = section.replace('###', '')
@@ -1612,7 +1612,7 @@ class ExerciseInstructionPopup(tk.Toplevel):
                 
                 # Insert section header
                 self.text_widget.insert("end", f"{section}\n", "header")
-                current_section = section.split('.')[0]
+                first_heading = False
             else:
                 # Add content to bullet points
                 if section.strip():
@@ -1622,6 +1622,11 @@ class ExerciseInstructionPopup(tk.Toplevel):
         if bullet_content:
             for bullet in bullet_content:
                 self.text_widget.insert("end", f"• {bullet}\n", "normal")
+
+        # If the last paragraph is not a bullet point, add it without indentation
+        if not first_heading and bullet_content:
+            last_paragraph = bullet_content[-1]
+            self.text_widget.insert("end", f"{last_paragraph}\n", "normal")
 
         # Make text widget read-only
         self.text_widget.config(state="disabled")
