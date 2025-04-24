@@ -408,7 +408,6 @@ class WorkoutApp(tk.Tk):
 
         # Create question frames
         self.focus_section = WorkoutFocus(self.question_container, self)
-        self.muscle_section = MuscleGroup(self.question_container, self)
         self.goal_section = WorkoutGoal(self.question_container, self)
         self.experience_section = ExperienceLevel(self.question_container, self)
         self.equipment_section = EquipmentSelection(self.question_container, self)
@@ -420,7 +419,6 @@ class WorkoutApp(tk.Tk):
         # Store sections in order
         self.sections = [
             self.focus_section,
-            self.muscle_section,
             self.goal_section,
             self.experience_section,
             self.equipment_section,
@@ -608,33 +606,22 @@ class WorkoutFocus(tk.Frame):
 
         tk.Label(self.center_frame, text="1. What kind of workout would you like to do?",
                  font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=500).pack(anchor="w", pady=5)
-        dropdown = ttk.Combobox(self.center_frame, textvariable=app.focus_var,
+        self.dropdown = ttk.Combobox(self.center_frame, textvariable=app.focus_var,
                                 values=["Full body", "Target muscle group"])
-        dropdown.pack(fill="x", pady=5)
+        self.dropdown.pack(fill="x", pady=5)
         # Remove automatic advancement
-        dropdown.bind("<<ComboboxSelected>>", lambda e: None)
+        self.dropdown.bind("<<ComboboxSelected>>", self.on_focus_change)
         # Make entire dropdown clickable to show list
-        dropdown.bind("<Button-1>", lambda e: dropdown.focus_set() or dropdown.event_generate('<Down>'))
+        self.dropdown.bind("<Button-1>", lambda e: self.dropdown.focus_set() or self.dropdown.event_generate('<Down>'))
 
-
-class MuscleGroup(tk.Frame):
-    def __init__(self, parent, app):
-        super().__init__(parent, bg='#212529')
-        self.app = app
+        # Muscle group checkboxes (initially hidden)
         self.muscle_groups = ["Chest", "Back", "Legs", "Arms", "Shoulders", "Core", "Glutes"]
-
-        # Create centered container
-        self.center_frame = tk.Frame(self, bg='#212529', padx=5)
-        self.center_frame.pack(expand=True, fill="both", padx=5, pady=10)
-
-        tk.Label(self.center_frame, text="2. Which muscle groups?",
-                 font=("Helvetica", 16, "bold"), bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=5)
-
-        # Create a frame to hold the checkboxes
-        self.checkbox_frame = tk.Frame(self.center_frame, bg='#212529')
+        self.muscle_frame = tk.Frame(self.center_frame, bg='#212529')
+        self.checkbox_frame = tk.Frame(self.muscle_frame, bg='#212529')
         self.checkbox_frame.pack(fill="x", pady=5)
-
-        # Create checkboxes for each muscle group
+        self.muscle_label = tk.Label(self.muscle_frame, text="Which muscle groups?",
+                 font=("Helvetica", 14, "bold"), bg='#212529', fg='white', wraplength=400)
+        self.muscle_label.pack(anchor="w", pady=5)
         for group in self.muscle_groups:
             var = tk.BooleanVar()
             self.app.muscle_vars[group] = var
@@ -642,10 +629,11 @@ class MuscleGroup(tk.Frame):
                            command=lambda: None, font=("Helvetica", 12),
                            bg='#212529', fg='white', wraplength=300).pack(anchor="w", pady=2)
 
-    def on_checkbox_change(self):
-        # Check if at least one muscle group is selected
-        if any(var.get() for var in self.app.muscle_vars.values()):
-            self.app.show_next_question()
+    def on_focus_change(self, event=None):
+        if self.app.focus_var.get() == "Target muscle group":
+            self.muscle_frame.pack(fill="x", pady=10)
+        else:
+            self.muscle_frame.pack_forget()
 
 
 class WorkoutGoal(tk.Frame):
