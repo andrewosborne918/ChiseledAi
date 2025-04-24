@@ -1580,13 +1580,14 @@ class ExerciseInstructionPopup(tk.Toplevel):
 
         # Process and insert the instructions with formatting
         sections = instructions.split('\n')
-        intro_text = []
+        intro_lines = []
         in_intro = True
-        after_header = False
+        in_bullets = False
         for section in sections:
             section = section.strip()
             if not section:
-                self.text_widget.insert("end", "\n")
+                if in_bullets:
+                    self.text_widget.insert("end", "\n")
                 continue
 
             # Remove markdown symbols
@@ -1597,29 +1598,33 @@ class ExerciseInstructionPopup(tk.Toplevel):
             section = section.replace('##', '')
             section = section.replace('#', '')
 
-            # Detect headers (numbered sections)
+            # Detect short numbered headings (max 6 words)
+            is_heading = False
             if section.startswith(('1.', '2.', '3.', '4.', '5.', '6.')) and section.endswith((':', '.')):
+                words = section.split()
+                if len(words) <= 6:
+                    is_heading = True
+
+            if in_intro and not is_heading:
+                intro_lines.append(section)
+                continue
+
+            if is_heading:
+                # Print intro text if any
+                if in_intro and intro_lines:
+                    self.text_widget.insert("end", " ".join(intro_lines) + "\n\n", "normal")
+                    intro_lines = []
+                in_intro = False
+                in_bullets = True
                 self.text_widget.insert("end", section + "\n", "header")
-                after_header = True
                 continue
 
-            # If after a header, treat as normal paragraph unless it's a bullet
-            if after_header:
-                if section.startswith('- ') or section.startswith('• '):
-                    self.text_widget.insert("end", section + "\n", "bullet")
-                else:
-                    self.text_widget.insert("end", section + "\n", "normal")
-                continue
+            if in_bullets:
+                self.text_widget.insert("end", "• " + section + "\n", "bullet")
 
-            # Otherwise, treat as intro or normal
-            if in_intro:
-                intro_text.append(section)
-            else:
-                self.text_widget.insert("end", section + "\n", "normal")
-
-        # Insert any intro text at the top
-        if intro_text:
-            self.text_widget.insert("end", "\n".join(intro_text) + "\n\n", "normal")
+        # If only intro text exists
+        if in_intro and intro_lines:
+            self.text_widget.insert("end", " ".join(intro_lines) + "\n", "normal")
 
         # Make text widget read-only
         self.text_widget.config(state="disabled")
